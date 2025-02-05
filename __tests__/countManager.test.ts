@@ -52,12 +52,4 @@ describe('CountManager', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
     expect(fakeDiscordService.sendEmbed).toHaveBeenCalledTimes(1);
   });
-
-  it('should send play alert when play count threshold is reached', async () => {
-    countManager.updatePlayCount();
-    countManager.updatePlayCount();
-
-    await new Promise(resolve => setTimeout(resolve, 10));
-    expect(fakeDiscordService.sendEmbed).toHaveBeenCalledTimes(1);
-  });
 });

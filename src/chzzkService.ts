@@ -82,10 +82,6 @@ export class ChzzkService {
           }
         });
       }
-      // !play 메시지 업데이트
-      if (message === "!play") {
-        this.countManager.updatePlayCount();
-      }
     });
 
     chzzkChat.on('systemMessage', systemMessage => {
