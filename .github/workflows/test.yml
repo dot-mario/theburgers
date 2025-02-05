@@ -1,4 +1,4 @@
-name: Run Tests
+name: Run Tests and Create PR
 
 on:
   push:
@@ -8,8 +8,13 @@ on:
     branches:
       - staging
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   test:
+    name: Run Tests on Staging
     runs-on: ubuntu-22.04
     env:
       DISCORD_TOKEN: dummy_token
@@ -17,7 +22,6 @@ jobs:
       DISCORD_BAN_CHANNEL_ID: dummy_ban_channel
       NID_AUTH: dummy_auth
       NID_SESSION: dummy_session
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -32,3 +36,25 @@ jobs:
 
       - name: Run Tests
         run: npm run test
+
+  create-pr:
+    name: Create PR from Staging to Main
+    needs: test
+    runs-on: ubuntu-22.04
+    if: ${{ needs.test.result == 'success' }}
+    steps:
+      - name: Checkout Repository with Full History
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Create Pull Request from staging to main
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Automated merge from staging to main"
+          title: "Automated PR: Merge staging into main"
+          body: "All tests on staging have passed. This PR was automatically generated."
+          base: main
+          head: staging
+          branch: auto-merge/staging-to-main
