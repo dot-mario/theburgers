@@ -1,6 +1,8 @@
 // src/config.ts
 import dotenv from 'dotenv';
-dotenv.config();
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+  }
 
 export const CONFIG = {
   DISCORD_TOKEN: process.env.DISCORD_TOKEN,
