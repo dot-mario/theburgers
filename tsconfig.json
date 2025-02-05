@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "outDir": "./dist",       // 빌드 결과물이 생성될 폴더를 지정합니다.
+    "rootDir": ".",           // 모든 소스 파일의 루트 디렉터리를 지정합니다.
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  }
+}
