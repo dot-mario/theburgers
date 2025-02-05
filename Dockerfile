@@ -36,7 +36,7 @@ RUN npm install --production
 # 빌드 결과물과 필요한 파일들 복사
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/descriptions.json ./descriptions.json
-COPY --from=builder /app/.env ./.env
+# COPY --from=builder /app/.env ./.env
 
 # 컨테이너 실행 시, 빌드된 메인 파일 실행
 CMD ["node", "dist/index.js"]
