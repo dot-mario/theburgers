@@ -1,6 +1,8 @@
 # The Burgers
 
-**주의:** 이 프로젝트의 전체 코드의 약 99%는 ChatGPT o3 mini를 통해 자동 생성되었습니다.
+**주의:** 이 프로젝트의 전체 코드의 약 99%는 ChatGPT o3 mini를 통해 자동 생성되었습니다.  
+  
+![Discord Banner 2](https://discord.com/api/guilds/1006888359249055814/widget.png?style=banner2)
 
 ## 프로젝트 소개
 
@@ -170,4 +172,4 @@ docker run -d --env-file .env theburgers
 5. Pull Request를 생성합니다.
 
 ## 라이선스
-이 프로젝트는 ISC 라이선스 하에 배포됩니다. 자세한 내용은 LICENSE 파일을 참고해 주세요.
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 LICENSE 파일을 참고해 주세요.
