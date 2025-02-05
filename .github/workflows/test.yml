@@ -44,17 +44,13 @@ jobs:
     if: ${{ needs.test.result == 'success' }}
     steps:
       - name: Checkout Repository with Full History
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
 
       - name: Create Pull Request from staging to main
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Automated merge from staging to main"
           title: "Automated PR: Merge staging into main"
           body: "All tests on staging have passed. This PR was automatically generated."
           base: main
-          head: staging
           branch: auto-merge/staging-to-main
