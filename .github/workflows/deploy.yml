@@ -18,7 +18,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/theburgers:latest
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/theburgers
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
