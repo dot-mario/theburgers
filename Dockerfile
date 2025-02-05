@@ -39,4 +39,4 @@ COPY --from=builder /app/descriptions.json ./descriptions.json
 # COPY --from=builder /app/.env ./.env
 
 # 컨테이너 실행 시, 빌드된 메인 파일 실행
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]

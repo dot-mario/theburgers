@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  theburgers:
+    image: kbh1933/theburgers:latest
+    container_name: theburgers
+    restart: always
+    ports:
+      - "3000:3000"        # 필요에 따라 포트 매핑 조정
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_ALERT_CHANNEL_ID=${DISCORD_ALERT_CHANNEL_ID}
+      - DISCORD_BAN_CHANNEL_ID=${DISCORD_BAN_CHANNEL_ID}
+      - NID_AUTH=${NID_AUTH}
+      - NID_SESSION=${NID_SESSION}
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+    command: --interval 300 --include-restarting
