@@ -31,7 +31,7 @@
 - **TypeScript:** 정적 타입 검사와 모던 JavaScript 문법을 활용한 안정적인 코드 작성.
 - **Node.js:** 서버 사이드 실행 환경.
 - **Discord.js:** Discord API 연동을 위한 라이브러리.
-- **CHZZK:** CHZZK 채팅 API 연동.
+- **CHZZK:** [kimcore/chzzk](https://github.com/kimcore/chzzk) 오픈소스 라이브러리를 사용하여 CHZZK 채팅 API 연동 기능 구현.
 - **date-fns:** 날짜 및 시간 처리.
 - **dotenv:** 환경변수 관리.
 - **Jest:** 단위 테스트 프레임워크.
