@@ -1,6 +1,6 @@
 # The Burgers
 
-**주의:** 이 프로젝트의 전체 코드의 약 99%는 ChatGPT o3 mini를 통해 자동 생성되었습니다.  
+이 프로젝트의 전체 코드의 약 99%는 ChatGPT o3 mini를 통해 자동 생성되었습니다.  
   
 ![Discord Banner 2](https://discord.com/api/guilds/1006888359249055814/widget.png?style=banner2)
 
@@ -154,6 +154,7 @@ docker run -d --env-file .env theburgers
 
 1. 필요한 환경변수를 .env 파일에 설정합니다.
 2. 터미널에서 다음 명령어를 실행합니다:
+> `.env` 파일이 준비돼있어야 합니다.
 ```bash
 docker-compose up -d
 ```

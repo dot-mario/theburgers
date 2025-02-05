@@ -37,14 +37,6 @@ export class CountManager {
     }
   }
 
-  public updatePlayCount(): void {
-    this.playCount++;
-    if (this.playCount >= this.countThreshold) {
-      this.sendPlayAlert();
-      this.playCount = 0;
-    }
-  }
-
   private checkGroupCounts(group: GroupType): void {
     const counts = this.groupCounts[group];
     const allSatisfied = Object.values(counts).every(val => val >= this.countThreshold);
@@ -77,15 +69,6 @@ export class CountManager {
              .setURL(CONFIG.CHZZK_LIVE_URL);
         break;
     }
-    await this.discordService.sendEmbed(embed, CONFIG.DISCORD_ALERT_CHANNEL_ID);
-  }
-
-  private async sendPlayAlert() {
-    const embed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle("⚽ !play 알림 ⚽")
-      .setDescription(this.descriptionService.getRandomDescription("!play"))
-      .setURL(CONFIG.CHZZK_LIVE_URL);
     await this.discordService.sendEmbed(embed, CONFIG.DISCORD_ALERT_CHANNEL_ID);
   }
 

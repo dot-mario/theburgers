@@ -36,7 +36,6 @@ describe('ChzzkService', () => {
 
     fakeCountManager = {
       updateGroupCount: jest.fn(),
-      updatePlayCount: jest.fn()
     };
 
     chzzkService = new ChzzkService(fakeCountManager as CountManager, fakeDiscordService as DiscordService);
