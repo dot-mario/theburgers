@@ -1,6 +1,6 @@
 # The Burgers
 
-**주의:** 이 프로젝트의 전체 코드의 약 99%는 ChatGPT o3 mini를 통해 자동 생성되었습니다.  
+이 프로젝트의 전체 코드의 약 99%는 ChatGPT o3 mini를 통해 자동 생성되었습니다.  
   
 ![Discord Banner 2](https://discord.com/api/guilds/1006888359249055814/widget.png?style=banner2)
 
