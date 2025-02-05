@@ -11,6 +11,12 @@ on:
 jobs:
   test:
     runs-on: ubuntu-22.04
+    env:
+      DISCORD_TOKEN: dummy_token
+      DISCORD_ALERT_CHANNEL_ID: dummy_alert_channel
+      DISCORD_BAN_CHANNEL_ID: dummy_ban_channel
+      NID_AUTH: dummy_auth
+      NID_SESSION: dummy_session
 
     steps:
       - name: Checkout Repository
@@ -26,3 +32,4 @@ jobs:
 
       - name: Run Tests
         run: npm run test
+  
