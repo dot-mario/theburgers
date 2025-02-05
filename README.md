@@ -160,6 +160,28 @@ docker run -d --env-file .env theburgers
 - **자동 생성 코드:**
    이 프로젝트의 전체 코드의 약 99%는 ChatGPT o3 mini를 사용하여 자동 생성되었습니다. 이 점은 빠른 프로토타이핑 및 초기 개발 단계에서 큰 도움이 되었으며, 코드의 구조와 유지보수성을 높이는데 기여했습니다.
 
+## CI/CD & GitHub Actions
+
+이 프로젝트는 GitHub Actions를 활용하여 자동화된 CI/CD 파이프라인을 구성하고 있습니다. 주요 워크플로우는 다음과 같습니다:
+
+### 1. Build and Deploy Docker Image
+
+이 워크플로우는 `main` 브랜치에 push되거나 release가 발행될 때 실행되며, Docker 이미지를 빌드하고 Docker Hub에 배포합니다.  
+워크플로우 파일: `.github/workflows/deploy.yml`
+
+### 2. Run Tests on Pull Requests
+이 워크플로우는 `main` 브랜치를 대상으로 하는 Pull Request가 생성될 때 실행되며, 테스트가 모두 통과되어야만 PR이 merge될 수 있도록 합니다.
+워크플로우 파일: `.github/workflows/test.yml`
+
+### 브랜치 전략 및 보호 규칙
+
+이 프로젝트는 두 개의 주요 브랜치를 사용합니다:
+
+* develop: 개발용 브랜치로, 새로운 기능 및 버그 수정이 이곳에서 진행됩니다.
+* main: 배포용 브랜치로, 테스트와 코드 리뷰를 거친 변경사항만 merge됩니다.
+
+GitHub Branch Protection Rules를 통해 main 브랜치에는 직접 push를 막고, PR을 통해서만 merge되도록 설정했습니다. 즉, 테스트와 CI가 통과된 PR만 main 브랜치로 merge됩니다.
+
 ## 기여 방법
 기여를 원하시는 분들은 아래 단계를 참고해 주세요:
 1. 이 레포지토리를 Fork 합니다.
