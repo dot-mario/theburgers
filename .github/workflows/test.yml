@@ -1,12 +1,8 @@
-name: Run Tests and Create PR
+name: Run Tests
 
 on:
-  push:
-    branches:
-      - staging
   pull_request:
-    branches:
-      - staging
+    branches: ['main']
 
 permissions:
   contents: write
@@ -14,7 +10,7 @@ permissions:
 
 jobs:
   test:
-    name: Run Tests on Staging
+    name: Run Tests
     runs-on: ubuntu-22.04
     env:
       DISCORD_TOKEN: dummy_token
@@ -24,10 +20,10 @@ jobs:
       NID_SESSION: dummy_session
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
@@ -36,21 +32,3 @@ jobs:
 
       - name: Run Tests
         run: npm run test
-
-  create-pr:
-    name: Create PR from Staging to Main
-    needs: test
-    runs-on: ubuntu-22.04
-    if: ${{ needs.test.result == 'success' }}
-    steps:
-      - name: Checkout Repository with Full History
-        uses: actions/checkout@v4
-
-      - name: Create Pull Request from staging to main
-        uses: peter-evans/create-pull-request@v7
-        with:
-          commit-message: "Automated merge from staging to main"
-          title: "Automated PR: Merge staging into main"
-          body: "All tests on staging have passed. This PR was automatically generated."
-          base: main
-          branch: auto-merge/staging-to-main
