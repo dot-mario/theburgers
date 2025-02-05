@@ -154,6 +154,7 @@ docker run -d --env-file .env theburgers
 
 1. 필요한 환경변수를 .env 파일에 설정합니다.
 2. 터미널에서 다음 명령어를 실행합니다:
+> `.env` 파일이 준비돼있어야 합니다.
 ```bash
 docker-compose up -d
 ```
