@@ -44,6 +44,7 @@ theburgers/
 ├── .env                      # 환경변수 파일
 ├── descriptions.json         # 동적 설명 문구 파일
 ├── Dockerfile                # Docker 멀티 스테이지 빌드 파일
+├── docker-compose.yml        # Docker Compose 설정 파일
 ├── jest.config.js            # Jest 설정 파일
 ├── package.json              # 의존성 및 스크립트 관리 파일
 ├── package-lock.json         # npm 의존성 잠금 파일
@@ -134,6 +135,8 @@ npm run test
 
 ### 7. Docker 사용
 
+#### Docker Build 및 Run
+
 프로젝트는 Docker를 사용한 멀티 스테이지 빌드를 지원합니다.  
 아래 명령어로 Docker 이미지를 빌드할 수 있습니다:
 
@@ -145,6 +148,38 @@ docker build -t theburgers .
 ```bash
 docker run -d --env-file .env theburgers
 ```
+
+#### Docker Compose 사용
+또한, Docker Compose를 사용하여 여러 서비스를 동시에 관리할 수 있습니다.
+
+1. 필요한 환경변수를 .env 파일에 설정합니다.
+2. 터미널에서 다음 명령어를 실행합니다:
+```bash
+docker-compose up -d
+```
+5분 간격으로 Docker Hub에서 최신 이미지가 있는지 확인하여 자동 업데이트를 수행합니다.
+
+## CI/CD & GitHub Actions
+
+이 프로젝트는 GitHub Actions를 활용하여 자동화된 CI/CD 파이프라인을 구성하고 있습니다. 주요 워크플로우는 다음과 같습니다:
+
+### 1. Build and Deploy Docker Image
+
+이 워크플로우는 `main` 브랜치에 push되거나 release가 발행될 때 실행되며, Docker 이미지를 빌드하고 Docker Hub에 배포합니다.  
+워크플로우 파일: `.github/workflows/deploy.yml`
+
+### 2. Run Tests on Pull Requests
+이 워크플로우는 `main` 브랜치를 대상으로 하는 Pull Request가 생성될 때 실행되며, 테스트가 모두 통과되어야만 PR이 merge될 수 있도록 합니다.
+워크플로우 파일: `.github/workflows/test.yml`
+
+### 브랜치 전략 및 보호 규칙
+
+이 프로젝트는 두 개의 주요 브랜치를 사용합니다:
+
+* develop: 개발용 브랜치로, 새로운 기능 및 버그 수정이 이곳에서 진행됩니다.
+* main: 배포용 브랜치로, 테스트와 코드 리뷰를 거친 변경사항만 merge됩니다.
+
+GitHub Branch Protection Rules를 통해 main 브랜치에는 직접 push를 막고, PR을 통해서만 merge되도록 설정했습니다. 즉, 테스트와 CI가 통과된 PR만 main 브랜치로 merge됩니다.
 
 ## 추가 정보
 - **Cleanup 메서드:**
