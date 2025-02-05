@@ -1,15 +1,16 @@
 name: Run Tests
 
 on:
-  push:
-    branches:
-      - staging
   pull_request:
-    branches:
-      - staging
+    branches: ['main']
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   test:
+    name: Run Tests
     runs-on: ubuntu-22.04
     env:
       DISCORD_TOKEN: dummy_token
@@ -17,13 +18,12 @@ jobs:
       DISCORD_BAN_CHANNEL_ID: dummy_ban_channel
       NID_AUTH: dummy_auth
       NID_SESSION: dummy_session
-
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
