@@ -1,20 +1,24 @@
 # The Burgers
 
+**한국어** · [English](./README.en.md)
+
 이 프로젝트의 전체 코드의 약 99%는 ChatGPT o3 mini를 통해 자동 생성되었습니다.  
-  
-![Discord Banner 2](https://discord.com/api/guilds/1006888359249055814/widget.png?style=banner2)
+
+<a href="https://discord.gg/kV8Jy3zT">
+  <img src="https://discord.com/api/guilds/1006888359249055814/widget.png?style=banner2" alt="Discord Banner 2" />
+</a>
 
 ## 프로젝트 소개
 
 **The Burgers**는 CHZZK 채팅 서비스와 Discord를 연동하여, 특정 단어 또는 명령어가 일정 횟수 이상 입력되면 자동으로 Discord 채널에 알림 메시지를 전송하는 봇입니다.  
+
 주요 기능은 다음과 같습니다:
 
 - **실시간 채팅 모니터링:**  
   CHZZK 채팅 서버에 연결하여 스트리머 채널의 채팅 메시지를 모니터링합니다.
   
 - **단어/문구 카운팅:**  
-  특정 그룹(예: burger, chicken, pizza)별로 단어(예: '젖', '버', '거' 등)의 입력 횟수를 카운팅합니다.  
-  `!play` 명령어의 입력 횟수를 별도로 카운팅합니다.
+  특정 그룹(예: burger, chicken, pizza)별로 단어(예: '젖', '버', '거' 등)의 입력 횟수를 카운팅합니다.
   
 - **알림 전송:**  
   각 그룹의 카운트가 사전에 정해진 임계값(예: 10)에 도달하면 Discord 채널로 임베디드 메시지를 전송합니다.  
@@ -58,11 +62,11 @@ theburgers/
 │   ├── chzzkService.ts       # CHZZK 클라이언트, 이벤트 핸들러, cleanup 메서드 포함
 │   └── index.ts              # 애플리케이션 엔트리 포인트
 └── __tests__/                # 테스트 파일 디렉터리
-    ├── config.test.ts            # config 모듈 테스트
-    ├── descriptionService.test.ts  # descriptionService 모듈 테스트 (cleanup 포함)
-    ├── discordService.test.ts      # discordService 모듈 테스트
-    ├── countManager.test.ts        # countManager 모듈 테스트 (cleanup 포함)
-    └── chzzkService.test.ts        # chzzkService 모듈 테스트 (cleanup 포함)
+    ├── config.test.ts             # config 모듈 테스트
+    ├── descriptionService.test.ts # descriptionService 모듈 테스트
+    ├── discordService.test.ts     # discordService 모듈 테스트
+    ├── countManager.test.ts       # countManager 모듈 테스트
+    └── chzzkService.test.ts       # chzzkService 모듈 테스트
 
 ```
 
@@ -97,8 +101,7 @@ NID_SESSION=your_nid_session_token
 {
   "burger": ["송재욱 버거 뿌린다 ㅋㅋ"],
   "chicken": ["송재욱 치킨 뿌린다 ㅋㅋ"],
-  "pizza": ["송재욱 피자 뿌린다 ㅋㅋ"],
-  "!play": ["송재욱 공 굴린다 ㅋㅋ"]
+  "pizza": ["송재욱 피자 뿌린다 ㅋㅋ"]
 }
 ```
 
@@ -188,7 +191,7 @@ GitHub Branch Protection Rules를 통해 main 브랜치에는 직접 push를 막
 
 - **모듈화:**
   코드가 기능별로 명확하게 분리되어 있어, 유지보수 및 확장이 용이합니다.  
-  예를 들어, Discord 관련 기능은 discordService.ts에, 카운팅 및 알림 기능은 countManager.ts에 구현되어 있습니다.
+  예를 들어, Discord 관련 기능은 `discordService.ts`에, 카운팅 및 알림 기능은 `countManager.ts`에 구현되어 있습니다.
 
 - **외부 API 모의(Mock):**
   테스트 환경에서는 Discord, CHZZK와 같은 외부 API 호출을 모의(Mock)하여 단위 테스트의 신뢰성을 높였습니다.
