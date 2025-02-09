@@ -18,6 +18,11 @@ export class CountManager {
   };
   private playCount = 0;
   private resetIntervalId: NodeJS.Timeout;
+  private alertCooldowns: Record<GroupType, number> = {
+    burger: 0,
+    chicken: 0,
+    pizza: 0
+  };
 
   constructor(
     private readonly countThreshold: number,
@@ -47,6 +52,12 @@ export class CountManager {
   }
 
   private async sendGroupAlert(group: GroupType) {
+    const now = Date.now();
+    if (this.alertCooldowns[group] > now) {
+      console.log(`[Cooldown] ${group} 알림 쿨다운 중...`);
+      return;
+    }
+
     const embed = new EmbedBuilder();
     const description = this.descriptionService.getRandomDescription(group);
     switch (group) {
@@ -70,6 +81,11 @@ export class CountManager {
         break;
     }
     await this.discordService.sendEmbed(embed, CONFIG.DISCORD_ALERT_CHANNEL_ID);
+
+    // 5분 쿨다운 설정
+    this.alertCooldowns[group] = now + (5 * 60 * 1000);
+    console.log(`[Cooldown] ${group} 5분 쿨다운 시작.`);
+
   }
 
   private resetGroupCount(group: GroupType): void {
