@@ -11,7 +11,7 @@ export const CONFIG = {
   NID_AUTH: process.env.NID_AUTH,
   NID_SESSION: process.env.NID_SESSION,
   STREAMER: "쟁구",
-  COUNT_THRESHOLD: 10,
+  COUNT_THRESHOLD: 5,
   CHZZK_LIVE_URL: "https://chzzk.naver.com/live/9107ff73efea18b598b9bd88ddfae369",
 };
 
