@@ -3,6 +3,7 @@ import { EmbedBuilder } from 'discord.js';
 import { CONFIG } from './config';
 import { DescriptionService } from './descriptionService';
 import { DiscordService } from './discordService';
+import { ALERT_COOLDOWN_DURATION } from './constants';
 
 export type GroupType = 'burger' | 'chicken' | 'pizza';
 
@@ -42,6 +43,11 @@ export class CountManager {
     }
   }
 
+  // 그룹의 문자 목록을 외부에서 조회할 수 있도록 제공
+  public getGroupLetters(group: GroupType): string[] {
+    return Object.keys(this.groupCounts[group]);
+  }
+
   private checkGroupCounts(group: GroupType): void {
     const counts = this.groupCounts[group];
     const allSatisfied = Object.values(counts).every(val => val >= this.countThreshold);
@@ -54,10 +60,19 @@ export class CountManager {
   private async sendGroupAlert(group: GroupType) {
     const now = Date.now();
     if (this.alertCooldowns[group] > now) {
-      console.log(`[Cooldown] ${group} 알림 쿨다운 중...`);
+      console.log(`[Cooldown] ${group} alert is on cooldown.`);
       return;
     }
 
+    const embed = this.createGroupEmbed(group);
+    await this.discordService.sendEmbed(embed, CONFIG.DISCORD_ALERT_CHANNEL_ID);
+
+    // 5분 쿨다운 설정
+    this.alertCooldowns[group] = now + ALERT_COOLDOWN_DURATION;
+    console.log(`[Cooldown] ${group} alert cooldown started.`);
+  }
+
+  private createGroupEmbed(group: GroupType): EmbedBuilder {
     const embed = new EmbedBuilder();
     const description = this.descriptionService.getRandomDescription(group);
     switch (group) {
@@ -80,12 +95,7 @@ export class CountManager {
              .setURL(CONFIG.CHZZK_LIVE_URL);
         break;
     }
-    await this.discordService.sendEmbed(embed, CONFIG.DISCORD_ALERT_CHANNEL_ID);
-
-    // 5분 쿨다운 설정
-    this.alertCooldowns[group] = now + (5 * 60 * 1000);
-    console.log(`[Cooldown] ${group} 5분 쿨다운 시작.`);
-
+    return embed;
   }
 
   private resetGroupCount(group: GroupType): void {
@@ -97,7 +107,6 @@ export class CountManager {
     this.playCount = 0;
   }
 
-  // cleanup 메서드: 주기적으로 실행 중인 타이머를 해제합니다.
   public cleanup(): void {
     clearInterval(this.resetIntervalId);
   }

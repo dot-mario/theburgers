@@ -4,6 +4,7 @@ import { CONFIG } from './config';
 import { CountManager } from './countManager';
 import { DiscordService } from './discordService';
 import { format } from 'date-fns';
+import { CHAT_CLEANUP_INTERVAL, CONNECTION_CHECK_INTERVAL, CHAT_POLL_INTERVAL } from './constants';
 
 interface ChatInfo {
   message: string;
@@ -15,7 +16,6 @@ export class ChzzkService {
   private lastChatMap = new Map<string, ChatInfo>();
   private isChzzkConnected = false;
   
-  // 타이머 ID를 저장합니다.
   private cleanupIntervalId: NodeJS.Timeout;
   private connectionCheckIntervalId!: NodeJS.Timeout;
 
@@ -23,138 +23,144 @@ export class ChzzkService {
     private readonly countManager: CountManager,
     private readonly discordService: DiscordService
   ) {
-    // 1분마다 lastChatMap에서 1시간 지난 항목 제거
     this.cleanupIntervalId = setInterval(() => {
-      const now = Date.now();
-      for (const [nickname, chatInfo] of this.lastChatMap.entries()) {
-        if (now - chatInfo.time.getTime() > 1000 * 60 * 60) {
-          this.lastChatMap.delete(nickname);
-          console.log(`Removed outdated chat info for ${nickname}`);
-        }
-      }
-    }, 60 * 1000);
+      this.cleanupOldChats();
+    }, CHAT_CLEANUP_INTERVAL);
   }
 
   public async start(): Promise<void> {
-    const chzzkClient = new ChzzkClient({
-      nidAuth: CONFIG.NID_AUTH,
-      nidSession: CONFIG.NID_SESSION,
-    });
-    const result = await chzzkClient.search.channels(CONFIG.STREAMER);
-    if (!result.channels || result.channels.length === 0) {
-      console.error("검색 결과에 채널이 없습니다.");
+    try {
+      const chzzkClient = new ChzzkClient({
+        nidAuth: CONFIG.NID_AUTH,
+        nidSession: CONFIG.NID_SESSION,
+      });
+      const result = await chzzkClient.search.channels(CONFIG.STREAMER);
+      if (!result.channels || result.channels.length === 0) {
+        console.error("No channel found in search results.");
+        return;
+      }
+      this.targetChannel = result.channels[0];
+      console.log("Target channel:", this.targetChannel.channelId);
+
+      const chzzkChat = chzzkClient.chat({
+        channelId: this.targetChannel.channelId,
+        pollInterval: CHAT_POLL_INTERVAL,
+      });
+
+      chzzkChat.on('connect', this.handleConnect.bind(this));
+      chzzkChat.on('disconnect', this.handleDisconnect.bind(this));
+      chzzkChat.on('reconnect', this.handleReconnect.bind(this));
+      chzzkChat.on('chat', (chat) => this.handleChat(chat));
+      chzzkChat.on('systemMessage', (systemMessage) => this.processSystemMessage(systemMessage));
+
+      this.connectionCheckIntervalId = setInterval(() => {
+        if (!this.isChzzkConnected) {
+          console.warn("Chat server disconnected. Attempting reconnection...");
+          chzzkChat.connect().catch(error => {
+            console.error("Error during reconnection attempt:", error);
+          });
+        }
+      }, CONNECTION_CHECK_INTERVAL);
+
+      await chzzkChat.connect();
+    } catch (error) {
+      console.error("Failed to start ChzzkService:", error);
+    }
+  }
+
+  private handleConnect(): void {
+    this.isChzzkConnected = true;
+    console.log("Connected to chat server.");
+  }
+
+  private handleDisconnect(data: string): void {
+    this.isChzzkConnected = false;
+    console.warn("Disconnected from chat server:", data);
+  }
+
+  private handleReconnect(newChatChannelId: string): void {
+    this.isChzzkConnected = true;
+    console.log(`Reconnected. New chat channel ID: ${newChatChannelId}`);
+  }
+
+  private handleChat(chat: any): void {
+    const message = chat.hidden ? "[블라인드 처리 됨]" : chat.message;
+    console.log(`${chat.profile.nickname}: ${message}`);
+    if (!chat.hidden) {
+      this.lastChatMap.set(chat.profile.nickname, { message, time: new Date() });
+    }
+    // 그룹별 단어 카운트 업데이트 (CountManager의 getGroupLetters() 사용)
+    for (const group of ['burger', 'chicken', 'pizza'] as const) {
+      this.countManager.getGroupLetters(group).forEach(letter => {
+        if (message === letter) {
+          this.countManager.updateGroupCount(group, letter);
+        }
+      });
+    }
+  }
+
+  private processSystemMessage(systemMessage: any): void {
+    const description = systemMessage.extras.description;
+    console.log("System message:", description);
+    this.handleSystemMessage(description);
+  }
+
+  private async handleSystemMessage(description: string) {
+    // 정규표현식을 사용해 "A님이 B님을 {액션}" 패턴에서 A(발신자)와 B(대상), 그리고 액션을 추출합니다.
+    const regex = /^(?<issuer>.+?)님이\s+(?<target>.+?)님을\s+(?<action>활동 제한 처리했습니다|임시 제한 처리했습니다|활동 제한을 해제했습니다)/;
+    const match = description.match(regex);
+    if (!match || !match.groups) {
+      console.warn("Failed to extract ban info from description:", description);
       return;
     }
-    this.targetChannel = result.channels[0];
-    console.log("타겟 채널:", this.targetChannel.channelId);
-
-    const chzzkChat = chzzkClient.chat({
-      channelId: this.targetChannel.channelId,
-      pollInterval: 30 * 1000,
-    });
-
-    chzzkChat.on('connect', () => {
-      this.isChzzkConnected = true;
-      console.log("채팅 서버에 연결되었습니다.");
-    });
-
-    chzzkChat.on('disconnect', (data: string) => {
-      this.isChzzkConnected = false;
-      console.warn("채팅 서버 연결 끊김:", data);
-    });
-
-    chzzkChat.on('reconnect', (newChatChannelId: string) => {
-      this.isChzzkConnected = true;
-      console.log(`재연결됨. 새로운 chatChannelId: ${newChatChannelId}`);
-    });
-
-    chzzkChat.on('chat', chat => {
-      const message = chat.hidden ? "[블라인드 처리 됨]" : chat.message;
-      console.log(`${chat.profile.nickname}: ${message}`);
-      if (!chat.hidden) {
-        this.lastChatMap.set(chat.profile.nickname, { message, time: new Date() });
-      }
-      // 그룹별 단어 카운트 업데이트
-      for (const group of ['burger', 'chicken', 'pizza'] as const) {
-        Object.keys(this.countManager['groupCounts']?.[group] || {}).forEach(letter => {
-          if (message === letter) {
-            this.countManager.updateGroupCount(group, letter);
-          }
-        });
-      }
-    });
-
-    chzzkChat.on('systemMessage', systemMessage => {
-      const description = systemMessage.extras.description;
-      console.log("시스템 메시지:", description);
-      if (description.endsWith("활동 제한 처리했습니다.")) {
-        this.handleSystemMessage(description, 'ban');
-      } else if (description.endsWith("임시 제한 처리했습니다.")) {
-        this.handleSystemMessage(description, 'tempBan');
-      } else if (description.endsWith("활동 제한을 해제했습니다.")) {
-        this.handleSystemMessage(description, 'release');
-      }
-    });
-
-    // 5초마다 연결 상태 확인 타이머 설정
-    this.connectionCheckIntervalId = setInterval(() => {
-      if (!this.isChzzkConnected) {
-        console.warn("채팅 서버 연결 끊김. 재연결 시도 중...");
-        chzzkChat.connect().catch(error => {
-          console.error("재연결 시도 중 에러 발생:", error);
-        });
-      }
-    }, 5 * 1000);
-
-    await chzzkChat.connect();
-  }
-
-  private async handleSystemMessage(description: string, type: 'ban' | 'tempBan' | 'release') {
-    let fixedSuffix: string;
+  
+    const issuer = match.groups.issuer.trim();
+    const target = match.groups.target.trim();
+    const action = match.groups.action.trim();
+  
     let discordLabel: string;
     let defaultMsg: string;
-    switch (type) {
-      case 'ban':
-        fixedSuffix = "님을 활동 제한 처리했습니다.";
-        discordLabel = "[밴]";
-        defaultMsg = "뒷밴";
-        break;
-      case 'tempBan':
-        fixedSuffix = "님을 임시 제한 처리했습니다.";
-        discordLabel = "[임차]";
-        defaultMsg = "뒷임차";
-        break;
-      case 'release':
-        fixedSuffix = "님의 활동 제한을 해제했습니다.";
-        discordLabel = "[석방]";
-        defaultMsg = "석방";
-        break;
+    if (action === "활동 제한 처리했습니다") {
+      discordLabel = "[밴]";
+      defaultMsg = "뒷밴";
+    } else if (action === "임시 제한 처리했습니다") {
+      discordLabel = "[임차]";
+      defaultMsg = "뒷임차";
+    } else if (action === "활동 제한을 해제했습니다") {
+      discordLabel = "[석방]";
+      defaultMsg = "석방";
+    } else {
+      return;
     }
-    if (!description.endsWith(fixedSuffix)) return;
-    const affectedUserNickname = this.extractAffectedUserNickname(description, fixedSuffix);
-    if (!affectedUserNickname) return;
+  
+    // 만약 발신자(issuer)가 실제 streamer가 아니라면 밴한 주체로 간주합니다.
+    const banInitiator = issuer !== CONFIG.STREAMER ? issuer : null;
+  
+    // 대상의 마지막 채팅 메시지를 가져옵니다.
+    const lastChat = this.lastChatMap.get(target);
+    const chatMsg = lastChat ? lastChat.message : defaultMsg;
     const now = new Date();
     const formatted = format(now, "yyyy-MM-dd HH:mm:ss");
-    const lastChat = this.lastChatMap.get(affectedUserNickname);
-    const chatMsg = lastChat ? lastChat.message : defaultMsg;
-    await this.discordService.sendMessage(
-      `\`\`\`[${formatted}] ${discordLabel} <${affectedUserNickname}> : ${chatMsg}\`\`\``,
-      CONFIG.DISCORD_BAN_CHANNEL_ID
-    );
+  
+    // 밴 메시지에 발신자가 실제 streamer가 아닌 경우 밴한 주체 정보를 함께 포함합니다.
+    const message = banInitiator
+      ? `\`\`\`[${formatted}] ${discordLabel} <${target}> (banned by <${banInitiator}>) : ${chatMsg}\`\`\``
+      : `\`\`\`[${formatted}] ${discordLabel} <${target}> : ${chatMsg}\`\`\``;
+  
+    await this.discordService.sendMessage(message, CONFIG.DISCORD_BAN_CHANNEL_ID);
   }
+  
 
-  private extractAffectedUserNickname(description: string, fixedSuffix: string): string {
-    const prefix = "님이 ";
-    const nicknamePart = description.slice(0, -fixedSuffix.length);
-    const prefixIndex = nicknamePart.indexOf(prefix);
-    if (prefixIndex === -1) {
-      console.warn("메시지에서 닉네임 시작 부분을 찾지 못했습니다:", description);
-      return "";
+  private cleanupOldChats(): void {
+    const now = Date.now();
+    for (const [nickname, chatInfo] of this.lastChatMap.entries()) {
+      if (now - chatInfo.time.getTime() > 60 * 60 * 1000) { // 1시간
+        this.lastChatMap.delete(nickname);
+        console.log(`Removed outdated chat info for ${nickname}`);
+      }
     }
-    return nicknamePart.slice(prefixIndex + prefix.length).trim();
   }
 
-  // cleanup 메서드: 생성된 타이머를 모두 해제합니다.
   public cleanup(): void {
     clearInterval(this.cleanupIntervalId);
     clearInterval(this.connectionCheckIntervalId);
