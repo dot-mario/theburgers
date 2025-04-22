@@ -15,6 +15,6 @@ describe('Config Module', () => {
     expect(CONFIG.NID_AUTH).toBe('test_auth');
     expect(CONFIG.NID_SESSION).toBe('test_session');
     // STREAMER는 코드에 하드코딩 되어 있음
-    expect(CONFIG.STREAMER).toBe('쟁구');
+    expect(CONFIG.STREAMER).toBe('쟁구임');
   });
 });
