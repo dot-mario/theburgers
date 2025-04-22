@@ -8,13 +8,15 @@ export interface DescriptionData {
   "!play": string[];
 }
 
+const DEFAULT_DESCRIPTIONS: DescriptionData = {
+  burger: ["송재욱 버거 뿌린다 ㅋㅋ"],
+  chicken: ["송재욱 치킨 뿌린다 ㅋㅋ"],
+  pizza: ["송재욱 피자 뿌린다 ㅋㅋ"],
+  "!play": ["송재욱 공 굴린다 ㅋㅋ"]
+};
+
 export class DescriptionService {
-  private descriptions: DescriptionData = {
-    burger: [],
-    chicken: [],
-    pizza: [],
-    "!play": []
-  };
+  private descriptions: DescriptionData = DEFAULT_DESCRIPTIONS;
   private filePath: string;
 
   constructor(filePath: string = './descriptions.json') {
@@ -24,7 +26,7 @@ export class DescriptionService {
   }
 
   private handleFileChange(): void {
-    console.log('descriptions.json 변경 감지. 재로딩합니다...');
+    console.log('descriptions.json change detected. Reloading...');
     this.loadDescriptions();
   }
 
@@ -32,15 +34,10 @@ export class DescriptionService {
     try {
       const data = readFileSync(this.filePath, 'utf8');
       this.descriptions = JSON.parse(data);
-      console.log('Descriptions loaded from file.');
+      console.log('Descriptions loaded successfully.');
     } catch (error) {
-      console.error('Descriptions 로딩 실패. 기본 설명을 사용합니다.', error);
-      this.descriptions = {
-        burger: ["송재욱 버거 뿌린다 ㅋㅋ"],
-        chicken: ["송재욱 치킨 뿌린다 ㅋㅋ"],
-        pizza: ["송재욱 피자 뿌린다 ㅋㅋ"],
-        "!play": ["송재욱 공 굴린다 ㅋㅋ"]
-      };
+      console.error('Failed to load descriptions. Using default descriptions.', error);
+      this.descriptions = DEFAULT_DESCRIPTIONS;
     }
   }
 
@@ -51,7 +48,6 @@ export class DescriptionService {
     return groupDescriptions[randomIndex];
   }
 
-  // cleanup 메서드: 파일 감시자를 해제합니다.
   public cleanup(): void {
     unwatchFile(this.filePath);
   }
