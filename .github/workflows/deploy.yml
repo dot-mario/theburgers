@@ -24,14 +24,25 @@ jobs:
       
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies and build
         run: |
-          npm install
+          npm ci
           npm run build
+        env:
+          # Test environment variables for build process
+          DISCORD_TOKEN: dummy_token
+          DISCORD_ALERT_CHANNEL_ID: dummy_channel
+          DISCORD_BAN_CHANNEL_ID: dummy_ban_channel
+          NID_AUTH: dummy_auth
+          NID_SESSION: dummy_session
+          SUPABASE_URL: dummy_url
+          SUPABASE_ANON_KEY: dummy_key
+          SUPABASE_SERVICE_ROLE_KEY: dummy_service_key
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -51,3 +62,7 @@ jobs:
           annotations: ${{ steps.meta.outputs.annotations }}
           provenance: true
           sbom: true
+          labels: |
+            org.opencontainers.image.title=TheBurgers Bot
+            org.opencontainers.image.description=CHZZK-Discord integration bot with web management
+            org.opencontainers.image.version=1.1.0

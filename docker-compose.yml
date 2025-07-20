@@ -8,11 +8,22 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # Discord Configuration
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_ALERT_CHANNEL_ID=${DISCORD_ALERT_CHANNEL_ID}
       - DISCORD_BAN_CHANNEL_ID=${DISCORD_BAN_CHANNEL_ID}
+      # CHZZK Configuration
       - NID_AUTH=${NID_AUTH}
       - NID_SESSION=${NID_SESSION}
+      # Supabase Configuration
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # Web Server Configuration
+      - WEB_PORT=${WEB_PORT:-3000}
+      - ENABLE_WEB_SERVER=${ENABLE_WEB_SERVER:-true}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+      - NODE_ENV=${NODE_ENV:-production}
 
   watchtower:
     image: containrrr/watchtower:latest
