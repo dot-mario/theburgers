@@ -1,6 +1,6 @@
 # The Burgers
 
-[한국어](./README.md) · **English**
+[한국어](./README.md) · **English** · [🏠 Back to Root](../README.md)
 
 About 99% of the total code for this project was generated automatically by ChatGPT o3 mini, and then underwent comprehensive refactoring by Claude 3.5 Sonnet to significantly improve code quality and maintainability.  
 

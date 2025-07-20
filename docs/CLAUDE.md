@@ -92,4 +92,26 @@ The bot specifically handles Korean streaming platform moderation:
 
 ### Configuration Requirements
 - `.env`: Discord tokens, channel IDs, CHZZK authentication
-- `descriptions.json`: Korean alert messages by food group (watched for live updates)
+- `config/descriptions.json`: Korean alert messages by food group (watched for live updates)
+- `config/tsconfig.json`: TypeScript compilation settings with ES2020 target
+- `config/jest.config.js`: Test configuration with ts-jest preset
+
+### Best Practices & Development Guidelines
+
+**Code Quality:**
+- Follow existing TypeScript patterns and type safety standards
+- Use utility classes from `src/utils.ts` for common operations
+- Implement `CleanupableService` interface for any new services
+- Add comprehensive tests for all new functionality
+
+**Testing Strategy:**
+- Run `npm test` before committing changes
+- Use `npm test -- --testNamePattern="ClassName"` for focused testing
+- Mock external dependencies (Discord, CHZZK APIs) in tests
+- Maintain test coverage above 95%
+
+**Deployment:**
+- Use `npm run build` to compile TypeScript
+- Test locally with `npm start` before Docker deployment
+- Environment variables must be configured in `.env` file
+- Docker builds use multi-stage optimization for production
