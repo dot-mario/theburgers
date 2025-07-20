@@ -1,25 +1,27 @@
 // src/index.ts
-import { DiscordService } from './discordService';
-import { DescriptionService } from './descriptionService';
-import { CountManager } from './countManager';
-import { ChzzkService } from './chzzkService';
-import { CONFIG } from './config';
+import { Application } from './application';
+import { WebServer } from './webServer';
+import dotenv from 'dotenv';
+
+// 환경변수 로드
+dotenv.config();
 
 async function main() {
+  const app = new Application();
+  
   try {
-    // Discord 서비스 초기화 및 로그인
-    const discordService = new DiscordService();
-    await discordService.login();
+    app.setupGracefulShutdown();
+    await app.initialize();
+    await app.start();
 
-    // Description 서비스 초기화 (동적 문구 로딩)
-    const descriptionService = new DescriptionService('./descriptions.json');
+    // 웹 서버 시작 (선택적)
+    const webPort = process.env.WEB_PORT ? parseInt(process.env.WEB_PORT) : 3000;
+    if (process.env.ENABLE_WEB_SERVER !== 'false') {
+      const webServer = new WebServer(app, webPort);
+      webServer.start();
+      console.log(`Web configuration interface available at http://localhost:${webPort}`);
+    }
 
-    // CountManager 초기화 (단어/문구 카운팅 및 알림 처리)
-    const countManager = new CountManager(CONFIG.COUNT_THRESHOLD, descriptionService, discordService);
-
-    // Chzzk 서비스 초기화 및 시작
-    const chzzkService = new ChzzkService(countManager, discordService);
-    await chzzkService.start();
   } catch (error) {
     console.error("Application encountered an error during startup:", error);
     process.exit(1);

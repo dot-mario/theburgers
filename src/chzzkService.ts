@@ -3,27 +3,23 @@ import { ChzzkClient } from 'chzzk';
 import { CONFIG } from './config';
 import { CountManager } from './countManager';
 import { DiscordService } from './discordService';
-import { format } from 'date-fns';
-import { CHAT_CLEANUP_INTERVAL, CONNECTION_CHECK_INTERVAL, CHAT_POLL_INTERVAL } from './constants';
+import { CHAT_CLEANUP_INTERVAL, CONNECTION_CHECK_INTERVAL, CHAT_POLL_INTERVAL, OLD_CHAT_THRESHOLD } from './constants';
+import { ChatInfo, CleanupableService } from './types';
+import { BanUtils, DateUtils, IntervalManager } from './utils';
+import { DynamicConstants } from './config/DynamicConstants';
 
-interface ChatInfo {
-  message: string;
-  time: Date;
-}
-
-export class ChzzkService {
+export class ChzzkService implements CleanupableService {
   private targetChannel!: { channelId: string };
   private lastChatMap = new Map<string, ChatInfo>();
   private isChzzkConnected = false;
-  
-  private cleanupIntervalId: NodeJS.Timeout;
-  private connectionCheckIntervalId!: NodeJS.Timeout;
+  private intervalManager = new IntervalManager();
 
   constructor(
     private readonly countManager: CountManager,
-    private readonly discordService: DiscordService
+    private readonly discordService: DiscordService,
+    private readonly dynamicConstants: DynamicConstants
   ) {
-    this.cleanupIntervalId = setInterval(() => {
+    this.intervalManager.createInterval(() => {
       this.cleanupOldChats();
     }, CHAT_CLEANUP_INTERVAL);
   }
@@ -53,7 +49,7 @@ export class ChzzkService {
       chzzkChat.on('chat', (chat) => this.handleChat(chat));
       chzzkChat.on('systemMessage', (systemMessage) => this.processSystemMessage(systemMessage));
 
-      this.connectionCheckIntervalId = setInterval(() => {
+      this.intervalManager.createInterval(() => {
         if (!this.isChzzkConnected) {
           console.warn("Chat server disconnected. Attempting reconnection...");
           chzzkChat.connect().catch(error => {
@@ -89,14 +85,7 @@ export class ChzzkService {
     if (!chat.hidden) {
       this.lastChatMap.set(chat.profile.nickname, { message, time: new Date() });
     }
-    // 그룹별 단어 카운트 업데이트 (CountManager의 getGroupLetters() 사용)
-    for (const group of ['burger', 'chicken', 'pizza'] as const) {
-      this.countManager.getGroupLetters(group).forEach(letter => {
-        if (message === letter) {
-          this.countManager.updateGroupCount(group, letter);
-        }
-      });
-    }
+    this.updateWordCounts(message);
   }
 
   private processSystemMessage(systemMessage: any): void {
@@ -106,63 +95,62 @@ export class ChzzkService {
   }
 
   private async handleSystemMessage(description: string) {
-    // 정규표현식을 사용해 "A님이 B님을 {액션}" 패턴에서 A(발신자)와 B(대상), 그리고 액션을 추출합니다.
-    const regex = /^(?<issuer>.+?)님이\s+(?<target>.+?)님을\s+(?<action>활동 제한 처리했습니다|임시 제한 처리했습니다|활동 제한을 해제했습니다)/;
-    const match = description.match(regex);
-    if (!match || !match.groups) {
+    const banInfo = BanUtils.parseBanMessage(description);
+    if (!banInfo) {
       console.warn("Failed to extract ban info from description:", description);
       return;
     }
-  
-    const issuer = match.groups.issuer.trim();
-    const target = match.groups.target.trim();
-    const action = match.groups.action.trim();
-  
-    let discordLabel: string;
-    let defaultMsg: string;
-    if (action === "활동 제한 처리했습니다") {
-      discordLabel = "[밴]";
-      defaultMsg = "뒷밴";
-    } else if (action === "임시 제한 처리했습니다") {
-      discordLabel = "[임차]";
-      defaultMsg = "뒷임차";
-    } else if (action === "활동 제한을 해제했습니다") {
-      discordLabel = "[석방]";
-      defaultMsg = "석방";
-    } else {
-      return;
+
+    const lastChat = this.lastChatMap.get(banInfo.target);
+    const defaultMessage = BanUtils.getDefaultMessage(banInfo.action);
+    const chatMsg = lastChat ? lastChat.message : (defaultMessage || 'Unknown action');
+    const timestamp = DateUtils.formatDateTime(new Date());
+    
+    const message = BanUtils.formatBanMessage(banInfo, chatMsg, CONFIG.STREAMER, timestamp);
+    if (message) {
+      await this.discordService.sendMessage(message, CONFIG.DISCORD_BAN_CHANNEL_ID);
     }
-  
-    // 만약 발신자(issuer)가 실제 streamer가 아니라면 밴한 주체로 간주합니다.
-    const banInitiator = issuer !== CONFIG.STREAMER ? issuer : null;
-  
-    // 대상의 마지막 채팅 메시지를 가져옵니다.
-    const lastChat = this.lastChatMap.get(target);
-    const chatMsg = lastChat ? lastChat.message : defaultMsg;
-    const now = new Date();
-    const formatted = format(now, "yyyy-MM-dd HH:mm:ss");
-  
-    // 밴 메시지에 발신자가 실제 streamer가 아닌 경우 밴한 주체 정보를 함께 포함합니다.
-    const message = banInitiator
-      ? `\`\`\`[${formatted}] ${discordLabel} <${target}> (banned by <${banInitiator}>) : ${chatMsg}\`\`\``
-      : `\`\`\`[${formatted}] ${discordLabel} <${target}> : ${chatMsg}\`\`\``;
-  
-    await this.discordService.sendMessage(message, CONFIG.DISCORD_BAN_CHANNEL_ID);
   }
   
+  private async updateWordCounts(message: string): Promise<void> {
+    try {
+      const groupCharacters = await this.dynamicConstants.getGroupCharacters();
+      
+      // 각 그룹의 문자들을 확인
+      for (const [group, characters] of Object.entries(groupCharacters)) {
+        for (const letter of characters) {
+          if (message === letter) {
+            await this.countManager.updateGroupCount(group, letter);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to update word counts:', error);
+      // 설정 로딩 실패 시에도 서비스는 계속 동작하도록 함
+    }
+  }
 
   private cleanupOldChats(): void {
     const now = Date.now();
     for (const [nickname, chatInfo] of this.lastChatMap.entries()) {
-      if (now - chatInfo.time.getTime() > 60 * 60 * 1000) { // 1시간
+      if (now - chatInfo.time.getTime() > OLD_CHAT_THRESHOLD) {
         this.lastChatMap.delete(nickname);
         console.log(`Removed outdated chat info for ${nickname}`);
       }
     }
   }
 
+  // 현재 연결 상태 조회
+  public isConnected(): boolean {
+    return this.isChzzkConnected;
+  }
+
+  // 최근 채팅 정보 조회
+  public getRecentChats(): Map<string, ChatInfo> {
+    return new Map(this.lastChatMap);
+  }
+
   public cleanup(): void {
-    clearInterval(this.cleanupIntervalId);
-    clearInterval(this.connectionCheckIntervalId);
+    this.intervalManager.clearAllIntervals();
   }
 }

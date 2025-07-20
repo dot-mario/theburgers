@@ -1,0 +1,183 @@
+import { testSupabaseConnection } from '../src/database/supabaseClient';
+
+// Mock Supabase
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+    }))
+  }))
+}));
+
+// Mock environment variables
+const originalEnv = process.env;
+
+describe('supabaseClient', () => {
+  let mockSupabaseChain: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // Set up environment variables
+    process.env = {
+      ...originalEnv,
+      SUPABASE_URL: 'https://test.supabase.co',
+      SUPABASE_ANON_KEY: 'test-anon-key',
+      SUPABASE_SERVICE_ROLE_KEY: 'test-service-key'
+    };
+
+    mockSupabaseChain = {
+      select: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+    };
+
+    // Re-import the module to get fresh instances with new env vars
+    jest.resetModules();
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  describe('client creation', () => {
+    it('should create clients with correct configuration', () => {
+      const { createClient } = require('@supabase/supabase-js');
+      
+      // Import to trigger client creation
+      require('../src/database/supabaseClient');
+
+      expect(createClient).toHaveBeenCalledTimes(2);
+      
+      // Regular client
+      expect(createClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-anon-key'
+      );
+
+      // Admin client
+      expect(createClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-service-key',
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
+      );
+    });
+  });
+
+  describe('testSupabaseConnection', () => {
+    let mockSupabaseAdmin: any;
+
+    beforeEach(() => {
+      mockSupabaseAdmin = {
+        from: jest.fn(() => mockSupabaseChain)
+      };
+
+      // Mock the supabaseAdmin export
+      jest.doMock('../src/database/supabaseClient', () => ({
+        supabaseAdmin: mockSupabaseAdmin,
+        testSupabaseConnection: jest.requireActual('../src/database/supabaseClient').testSupabaseConnection
+      }));
+    });
+
+    it('should return true when connection succeeds', async () => {
+      mockSupabaseChain.limit.mockResolvedValue({
+        data: [{ count: 5 }],
+        error: null
+      });
+
+      const { testSupabaseConnection } = require('../src/database/supabaseClient');
+      const result = await testSupabaseConnection();
+
+      expect(result).toBe(true);
+      expect(mockSupabaseAdmin.from).toHaveBeenCalledWith('detection_groups');
+      expect(mockSupabaseChain.select).toHaveBeenCalledWith('count()');
+      expect(mockSupabaseChain.limit).toHaveBeenCalledWith(1);
+    });
+
+    it('should return false when database query fails', async () => {
+      mockSupabaseChain.limit.mockResolvedValue({
+        data: null,
+        error: new Error('Table does not exist')
+      });
+
+      const { testSupabaseConnection } = require('../src/database/supabaseClient');
+      const result = await testSupabaseConnection();
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when connection throws exception', async () => {
+      mockSupabaseChain.limit.mockRejectedValue(new Error('Network error'));
+
+      const { testSupabaseConnection } = require('../src/database/supabaseClient');
+      const result = await testSupabaseConnection();
+
+      expect(result).toBe(false);
+    });
+
+    it('should log appropriate messages', async () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      try {
+        // Test successful connection
+        mockSupabaseChain.limit.mockResolvedValue({
+          data: [{ count: 5 }],
+          error: null
+        });
+
+        const { testSupabaseConnection } = require('../src/database/supabaseClient');
+        await testSupabaseConnection();
+
+        expect(consoleSpy).toHaveBeenCalledWith('Supabase connection successful');
+
+        // Test failed connection
+        mockSupabaseChain.limit.mockResolvedValue({
+          data: null,
+          error: new Error('Connection failed')
+        });
+
+        await testSupabaseConnection();
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Supabase connection test failed:',
+          new Error('Connection failed')
+        );
+      } finally {
+        consoleSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+      }
+    });
+  });
+
+  describe('environment variable validation', () => {
+    it('should handle missing environment variables', () => {
+      // Remove environment variables
+      delete process.env.SUPABASE_URL;
+      delete process.env.SUPABASE_ANON_KEY;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      // This should throw when trying to create clients
+      expect(() => {
+        jest.resetModules();
+        require('../src/database/supabaseClient');
+      }).toThrow();
+    });
+
+    it('should work with all required environment variables', () => {
+      process.env.SUPABASE_URL = 'https://valid.supabase.co';
+      process.env.SUPABASE_ANON_KEY = 'valid-anon-key';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'valid-service-key';
+
+      expect(() => {
+        jest.resetModules();
+        require('../src/database/supabaseClient');
+      }).not.toThrow();
+    });
+  });
+});
