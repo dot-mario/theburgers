@@ -59,7 +59,7 @@ describe('Application', () => {
       expect(DiscordService).toHaveBeenCalledTimes(1);
       expect(mockDiscordService.login).toHaveBeenCalledTimes(1);
       
-      expect(DescriptionService).toHaveBeenCalledWith('./descriptions.json');
+      expect(DescriptionService).toHaveBeenCalledWith('./config/descriptions.json');
       expect(CountManager).toHaveBeenCalledTimes(1);
       expect(ChzzkService).toHaveBeenCalledTimes(1);
     });

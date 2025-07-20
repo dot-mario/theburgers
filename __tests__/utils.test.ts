@@ -9,8 +9,8 @@ describe('DateUtils', () => {
   });
 
   it('should handle different dates consistently', () => {
-    const date1 = new Date('2023-01-01T00:00:00Z');
-    const date2 = new Date('2023-12-31T23:59:59Z');
+    const date1 = new Date(2023, 0, 1, 12, 0, 0); // Local time 2023-01-01 12:00:00
+    const date2 = new Date(2023, 11, 31, 12, 0, 0); // Local time 2023-12-31 12:00:00
     
     const formatted1 = DateUtils.formatDateTime(date1);
     const formatted2 = DateUtils.formatDateTime(date2);

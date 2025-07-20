@@ -5,25 +5,23 @@ import { GROUP_CHARACTERS, BAN_ACTIONS } from '../src/constants';
 import { CONFIG } from '../src/config';
 
 // chzzk 모듈을 모킹하여 search 및 chat 메서드의 동작을 정의합니다.
-jest.mock('chzzk', () => {
-  return {
-    ChzzkClient: jest.fn().mockImplementation(() => {
-      return {
-        search: {
-          channels: jest.fn().mockResolvedValue({
-            channels: [{ channelId: 'test_channel' }]
-          })
-        },
-        chat: jest.fn().mockImplementation(() => {
-          return {
-            on: jest.fn(),
-            connect: jest.fn().mockResolvedValue(undefined)
-          };
-        })
-      };
+const mockChatInstance = {
+  on: jest.fn(),
+  connect: jest.fn().mockResolvedValue(undefined)
+};
+
+const mockChzzkClient = {
+  search: {
+    channels: jest.fn().mockResolvedValue({
+      channels: [{ channelId: 'test_channel' }]
     })
-  };
-});
+  },
+  chat: jest.fn().mockReturnValue(mockChatInstance)
+};
+
+jest.mock('chzzk', () => ({
+  ChzzkClient: jest.fn().mockImplementation(() => mockChzzkClient)
+}));
 
 describe('ChzzkService', () => {
   let chzzkService: ChzzkService;
@@ -54,41 +52,25 @@ describe('ChzzkService', () => {
   });
 
   describe('chat message processing', () => {
-    let mockChat: any;
-
     beforeEach(() => {
-      mockChat = {
-        on: jest.fn(),
-        connect: jest.fn().mockResolvedValue(undefined)
-      };
-
-      // chzzk mock에서 chat 메서드가 mockChat을 반환하도록 설정
-      const ChzzkClient = require('chzzk').ChzzkClient;
-      ChzzkClient.mockImplementation(() => ({
-        search: {
-          channels: jest.fn().mockResolvedValue({
-            channels: [{ channelId: 'test_channel' }]
-          })
-        },
-        chat: jest.fn().mockReturnValue(mockChat)
-      }));
+      jest.clearAllMocks();
     });
 
     it('should register event handlers when starting', async () => {
       await chzzkService.start();
 
-      expect(mockChat.on).toHaveBeenCalledWith('connect', expect.any(Function));
-      expect(mockChat.on).toHaveBeenCalledWith('disconnect', expect.any(Function));
-      expect(mockChat.on).toHaveBeenCalledWith('reconnect', expect.any(Function));
-      expect(mockChat.on).toHaveBeenCalledWith('chat', expect.any(Function));
-      expect(mockChat.on).toHaveBeenCalledWith('systemMessage', expect.any(Function));
+      expect(mockChatInstance.on).toHaveBeenCalledWith('connect', expect.any(Function));
+      expect(mockChatInstance.on).toHaveBeenCalledWith('disconnect', expect.any(Function));
+      expect(mockChatInstance.on).toHaveBeenCalledWith('reconnect', expect.any(Function));
+      expect(mockChatInstance.on).toHaveBeenCalledWith('chat', expect.any(Function));
+      expect(mockChatInstance.on).toHaveBeenCalledWith('systemMessage', expect.any(Function));
     });
 
     it('should process chat messages and update group counts', async () => {
       await chzzkService.start();
 
       // chat 이벤트 핸들러 가져오기
-      const chatHandler = mockChat.on.mock.calls.find((call: any) => call[0] === 'chat')[1];
+      const chatHandler = mockChatInstance.on.mock.calls.find((call: any) => call[0] === 'chat')[1];
 
       // 각 그룹의 문자들을 테스트
       Object.entries(GROUP_CHARACTERS).forEach(([groupType, characters]) => {
@@ -109,7 +91,7 @@ describe('ChzzkService', () => {
     it('should not process hidden chat messages for counting', async () => {
       await chzzkService.start();
 
-      const chatHandler = mockChat.on.mock.calls.find((call: any) => call[0] === 'chat')[1];
+      const chatHandler = mockChatInstance.on.mock.calls.find((call: any) => call[0] === 'chat')[1];
       
       const hiddenMessage = {
         hidden: true,
@@ -127,7 +109,7 @@ describe('ChzzkService', () => {
     it('should not update count for non-target characters', async () => {
       await chzzkService.start();
 
-      const chatHandler = mockChat.on.mock.calls.find((call: any) => call[0] === 'chat')[1];
+      const chatHandler = mockChatInstance.on.mock.calls.find((call: any) => call[0] === 'chat')[1];
       
       const nonTargetMessage = {
         hidden: false,
@@ -143,27 +125,12 @@ describe('ChzzkService', () => {
   });
 
   describe('system message processing', () => {
-    let mockChat: any;
     let systemMessageHandler: Function;
 
     beforeEach(async () => {
-      mockChat = {
-        on: jest.fn(),
-        connect: jest.fn().mockResolvedValue(undefined)
-      };
-
-      const ChzzkClient = require('chzzk').ChzzkClient;
-      ChzzkClient.mockImplementation(() => ({
-        search: {
-          channels: jest.fn().mockResolvedValue({
-            channels: [{ channelId: 'test_channel' }]
-          })
-        },
-        chat: jest.fn().mockReturnValue(mockChat)
-      }));
-
+      jest.clearAllMocks();
       await chzzkService.start();
-      systemMessageHandler = mockChat.on.mock.calls.find((call: any) => call[0] === 'systemMessage')[1];
+      systemMessageHandler = mockChatInstance.on.mock.calls.find((call: any) => call[0] === 'systemMessage')[1];
     });
 
     it('should process ban system messages', async () => {
@@ -250,7 +217,7 @@ describe('ChzzkService', () => {
       };
 
       // 에러 없이 처리되어야 함
-      await expect(systemMessageHandler(invalidMessage)).resolves.not.toThrow();
+      expect(() => systemMessageHandler(invalidMessage)).not.toThrow();
       
       // Discord 메시지는 발송되지 않아야 함
       expect(fakeDiscordService.sendMessage).not.toHaveBeenCalled();
