@@ -15,6 +15,7 @@ export interface DescriptionData {
   chicken: string[];
   pizza: string[];
   "!play": string[];
+  [key: string]: string[]; // 동적 그룹 지원
 }
 
 export interface BanInfo {

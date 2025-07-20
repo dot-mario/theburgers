@@ -1,8 +1,12 @@
 import { ChzzkService } from '../src/chzzkService';
 import { DiscordService } from '../src/discordService';
 import { CountManager } from '../src/countManager';
+import { DynamicConstants } from '../src/config/DynamicConstants';
 import { GROUP_CHARACTERS, BAN_ACTIONS } from '../src/constants';
 import { CONFIG } from '../src/config';
+
+// Mock DynamicConstants
+jest.mock('../src/config/DynamicConstants');
 
 // chzzk 모듈을 모킹하여 search 및 chat 메서드의 동작을 정의합니다.
 const mockChatInstance = {
@@ -27,6 +31,7 @@ describe('ChzzkService', () => {
   let chzzkService: ChzzkService;
   let fakeDiscordService: Partial<DiscordService>;
   let fakeCountManager: Partial<CountManager>;
+  let fakeDynamicConstants: Partial<DynamicConstants>;
 
   beforeEach(() => {
     fakeDiscordService = {
@@ -39,7 +44,15 @@ describe('ChzzkService', () => {
       getGroupLetters: jest.fn().mockImplementation((group: keyof typeof GROUP_CHARACTERS) => GROUP_CHARACTERS[group])
     };
 
-    chzzkService = new ChzzkService(fakeCountManager as CountManager, fakeDiscordService as DiscordService);
+    fakeDynamicConstants = {
+      getGroupCharacters: jest.fn().mockResolvedValue(GROUP_CHARACTERS)
+    };
+
+    chzzkService = new ChzzkService(
+      fakeCountManager as CountManager, 
+      fakeDiscordService as DiscordService,
+      fakeDynamicConstants as DynamicConstants
+    );
   });
 
   afterEach(() => {
@@ -73,19 +86,19 @@ describe('ChzzkService', () => {
       const chatHandler = mockChatInstance.on.mock.calls.find((call: any) => call[0] === 'chat')[1];
 
       // 각 그룹의 문자들을 테스트
-      Object.entries(GROUP_CHARACTERS).forEach(([groupType, characters]) => {
-        characters.forEach(char => {
+      for (const [groupType, characters] of Object.entries(GROUP_CHARACTERS)) {
+        for (const char of characters) {
           const mockChatMessage = {
             hidden: false,
             message: char,
             profile: { nickname: 'testUser' }
           };
 
-          chatHandler(mockChatMessage);
+          await chatHandler(mockChatMessage);
           
           expect(fakeCountManager.updateGroupCount).toHaveBeenCalledWith(groupType, char);
-        });
-      });
+        }
+      }
     });
 
     it('should not process hidden chat messages for counting', async () => {

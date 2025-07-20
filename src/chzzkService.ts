@@ -3,9 +3,10 @@ import { ChzzkClient } from 'chzzk';
 import { CONFIG } from './config';
 import { CountManager } from './countManager';
 import { DiscordService } from './discordService';
-import { CHAT_CLEANUP_INTERVAL, CONNECTION_CHECK_INTERVAL, CHAT_POLL_INTERVAL, OLD_CHAT_THRESHOLD, GROUP_CHARACTERS } from './constants';
-import { ChatInfo, GroupType, CleanupableService } from './types';
+import { CHAT_CLEANUP_INTERVAL, CONNECTION_CHECK_INTERVAL, CHAT_POLL_INTERVAL, OLD_CHAT_THRESHOLD } from './constants';
+import { ChatInfo, CleanupableService } from './types';
 import { BanUtils, DateUtils, IntervalManager } from './utils';
+import { DynamicConstants } from './config/DynamicConstants';
 
 export class ChzzkService implements CleanupableService {
   private targetChannel!: { channelId: string };
@@ -15,7 +16,8 @@ export class ChzzkService implements CleanupableService {
 
   constructor(
     private readonly countManager: CountManager,
-    private readonly discordService: DiscordService
+    private readonly discordService: DiscordService,
+    private readonly dynamicConstants: DynamicConstants
   ) {
     this.intervalManager.createInterval(() => {
       this.cleanupOldChats();
@@ -110,15 +112,22 @@ export class ChzzkService implements CleanupableService {
     }
   }
   
-
-  private updateWordCounts(message: string): void {
-    Object.entries(GROUP_CHARACTERS).forEach(([group, characters]) => {
-      characters.forEach(letter => {
-        if (message === letter) {
-          this.countManager.updateGroupCount(group as GroupType, letter);
+  private async updateWordCounts(message: string): Promise<void> {
+    try {
+      const groupCharacters = await this.dynamicConstants.getGroupCharacters();
+      
+      // 각 그룹의 문자들을 확인
+      for (const [group, characters] of Object.entries(groupCharacters)) {
+        for (const letter of characters) {
+          if (message === letter) {
+            await this.countManager.updateGroupCount(group, letter);
+          }
         }
-      });
-    });
+      }
+    } catch (error) {
+      console.error('Failed to update word counts:', error);
+      // 설정 로딩 실패 시에도 서비스는 계속 동작하도록 함
+    }
   }
 
   private cleanupOldChats(): void {
@@ -129,6 +138,16 @@ export class ChzzkService implements CleanupableService {
         console.log(`Removed outdated chat info for ${nickname}`);
       }
     }
+  }
+
+  // 현재 연결 상태 조회
+  public isConnected(): boolean {
+    return this.isChzzkConnected;
+  }
+
+  // 최근 채팅 정보 조회
+  public getRecentChats(): Map<string, ChatInfo> {
+    return new Map(this.lastChatMap);
   }
 
   public cleanup(): void {

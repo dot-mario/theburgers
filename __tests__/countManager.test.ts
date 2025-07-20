@@ -2,8 +2,12 @@ import { CountManager } from '../src/countManager';
 import { GroupType } from '../src/types';
 import { DescriptionService } from '../src/descriptionService';
 import { DiscordService } from '../src/discordService';
+import { DynamicConstants } from '../src/config/DynamicConstants';
 import { GROUP_CHARACTERS, GROUP_COLORS, GROUP_EMOJIS } from '../src/constants';
 import { EmbedBuilder } from 'discord.js';
+
+// Mock DynamicConstants
+jest.mock('../src/config/DynamicConstants');
 
 jest.mock('discord.js', () => {
   return {
@@ -21,8 +25,9 @@ describe('CountManager', () => {
   let countManager: CountManager;
   let fakeDescriptionService: Partial<DescriptionService>;
   let fakeDiscordService: Partial<DiscordService>;
+  let fakeDynamicConstants: Partial<DynamicConstants>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     fakeDescriptionService = {
       getRandomDescription: (group: string) => `${group} description`
     };
@@ -31,8 +36,28 @@ describe('CountManager', () => {
       sendEmbed: jest.fn().mockResolvedValue(undefined)
     };
 
+    fakeDynamicConstants = {
+      getGroupCharacters: jest.fn().mockResolvedValue(GROUP_CHARACTERS),
+      onConfigChange: jest.fn(),
+      getEnabledGroupNames: jest.fn().mockResolvedValue(['burger', 'chicken', 'pizza']),
+      getGroupByName: jest.fn().mockImplementation((name: string) => Promise.resolve({
+        id: name,
+        name: name,
+        threshold: 2,
+        enabled: true
+      }))
+    };
+
     // 임계값 2로 설정하여 테스트 용이성 확보
-    countManager = new CountManager(2, fakeDescriptionService as DescriptionService, fakeDiscordService as DiscordService);
+    countManager = new CountManager(
+      2, 
+      fakeDescriptionService as DescriptionService, 
+      fakeDiscordService as DiscordService,
+      fakeDynamicConstants as DynamicConstants
+    );
+
+    // 초기화가 완료될 때까지 대기
+    await new Promise(resolve => setTimeout(resolve, 10));
   });
 
   afterEach(() => {
@@ -44,11 +69,11 @@ describe('CountManager', () => {
   it('should send group alert when group count threshold is reached', async () => {
     // burger 그룹의 각 글자에 대해 임계값(2)만큼 호출
     const burgerChars = GROUP_CHARACTERS.burger;
-    burgerChars.forEach(char => {
+    for (const char of burgerChars) {
       for (let i = 0; i < 2; i++) {
-        countManager.updateGroupCount('burger', char);
+        await countManager.updateGroupCount('burger', char);
       }
-    });
+    }
 
     // 비동기 작업이 완료될 시간을 잠깐 기다립니다.
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -67,9 +92,9 @@ describe('CountManager', () => {
 
   it('should not send alert if threshold not reached for all characters', async () => {
     // burger 그룹에서 일부 글자만 임계값에 도달
-    countManager.updateGroupCount('burger', GROUP_CHARACTERS.burger[0]);
-    countManager.updateGroupCount('burger', GROUP_CHARACTERS.burger[0]);
-    countManager.updateGroupCount('burger', GROUP_CHARACTERS.burger[1]);
+    await countManager.updateGroupCount('burger', GROUP_CHARACTERS.burger[0]);
+    await countManager.updateGroupCount('burger', GROUP_CHARACTERS.burger[0]);
+    await countManager.updateGroupCount('burger', GROUP_CHARACTERS.burger[1]);
     // 세 번째 글자는 임계값에 도달하지 않음
 
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -83,11 +108,11 @@ describe('CountManager', () => {
       const characters = GROUP_CHARACTERS[groupType];
       
       // 각 그룹의 모든 문자에 대해 임계값만큼 업데이트
-      characters.forEach(char => {
+      for (const char of characters) {
         for (let i = 0; i < 2; i++) {
-          countManager.updateGroupCount(groupType, char);
+          await countManager.updateGroupCount(groupType, char);
         }
-      });
+      }
     }
 
     await new Promise(resolve => setTimeout(resolve, 10));

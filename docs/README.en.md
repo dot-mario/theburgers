@@ -2,30 +2,40 @@
 
 [한국어](./README.md) · **English** · [🏠 Back to Root](../README.md)
 
-About 99% of the total code for this project was generated automatically by ChatGPT o3 mini, and then underwent comprehensive refactoring by Claude 3.5 Sonnet to significantly improve code quality and maintainability.  
+About 99% of the total code for this project was generated automatically by ChatGPT o3 mini, and then underwent comprehensive refactoring and **dynamic configuration system implementation** by Claude 3.5 Sonnet to significantly improve code quality and maintainability.  
 
 <a href="https://discord.gg/kV8Jy3zT">
   <img src="https://discord.com/api/guilds/1006888359249055814/widget.png?style=banner2" alt="Discord Banner 2" />
 </a>
 
-## About the project.
+## Project Overview
 
-**The Burgers** is a bot that integrates the CHZZK chat service with Discord to automatically send notifications to Discord channels when certain words or commands are typed a certain number of times.  
+**The Burgers** is a bot that integrates the CHZZK chat service with Discord to automatically send notifications to Discord channels when certain words or commands are typed a certain number of times.
 
-Key features include:
+### 🆕 **Dynamic Configuration System** - Major Innovation
 
-- **Real-time chat monitoring:**  
+We've completely transformed the hardcoded detection patterns into a **fully dynamic, web-manageable system**:
+
+- **Web Dashboard**: Intuitive browser-based UI for managing detection groups
+- **Real-time Application**: Configuration changes apply instantly without server restart
+- **Supabase Integration**: Scalable PostgreSQL-based data storage
+- **Unlimited Groups**: Add as many detection patterns as desired beyond the original '젖버거', '젖피자'
+- **Real-time Monitoring**: Live tracking of current count status and system health
+
+### Key Features
+
+- **Real-time Chat Monitoring:**  
   Connects to the CHZZK chat server to monitor chat messages in a streamer's channel.
   
-- **Word/phrase counting:**  
-Counts the number of times a word (e.g., “젖”, “버”, “거”, etc.) is typed by a specific group (e.g., burger, chicken, pizza).
+- **Dynamic Word/Phrase Detection:** 🆕  
+  Create and manage unlimited detection groups through the web interface. Configure character sequences, colors, emojis, and thresholds individually for each group.
   
-- **Sending notifications:**  
-  Sends an embedded message to the Discord channel when the count for each group reaches a predetermined threshold (e.g. 10).  
-  Also sends notification messages to the Discord channel when system message (e.g., activity restriction, temporary restriction, unrestriction) events occur.
+- **Intelligent Notification System:**  
+  Sends styled embedded messages to Discord channels when each group's count reaches its configured threshold.  
+  Also sends notification messages to Discord channels when system message events (e.g., activity restriction, temporary restriction, unrestriction) occur.
   
-- **Dynamic description text:**  
-  Dynamically loads description phrases from the `descriptions.json` file, detects file changes and reflects them in real-time.
+- **Web-based Configuration Management:** 🆕  
+  Responsive web dashboard accessible at `http://localhost:3000` for managing all settings.
   
 - **Advanced Resource Management:**  
   Consistent resource management through `CleanupableService` interface and centralized timer management using `IntervalManager` class to prevent memory leaks.
@@ -33,230 +43,306 @@ Counts the number of times a word (e.g., “젖”, “버”, “거”, etc.) 
 - **Dependency Injection Pattern:**  
   Centralized service lifecycle management through `Application` class with graceful shutdown functionality.
 
-- **Utility-Based Architecture:**  
-  Improved code reusability and testability through utility classes like `BanUtils`, `DateUtils`, `ArrayUtils`.
+## Technology Stack
 
-## Main technology stack.
+### Core System
+- **TypeScript:** Reliable code development with static type checking and modern JavaScript syntax
+- **Node.js:** Server-side runtime environment
+- **Discord.js:** Library for Discord API integration
+- **CHZZK:** [kimcore/chzzk](https://github.com/kimcore/chzzk) open source library for CHZZK chat API integration
 
-- **TypeScript:** Write reliable code utilizing static type checking and modern JavaScript syntax.
-- **Node.js:** Server-side execution environment.
-- **Discord.js:** Library for integrating with the Discord API.
-- **CHZZK:** [kimcore/chzzk](https://github.com/kimcore/chzzk) open source library to integrate with the CHZZK chat API.
-- **date-fns:** Date and time handling.
-- **dotenv:** Environment variable management.
-- **Jest:** Unit testing framework.
-- **Docker:** Creating container images with multi-stage builds.
+### Dynamic Configuration System 🆕
+- **Supabase:** PostgreSQL-based real-time database and authentication
+- **Express.js:** RESTful API server and web interface provision
+- **Vanilla JavaScript:** Lightweight frontend (no external framework dependencies)
+- **CORS:** Secure cross-origin request handling
 
-## Project file structure
+### Development Tools
+- **date-fns:** Date and time handling
+- **dotenv:** Environment variable management
+- **Jest:** Unit testing framework
+- **Docker:** Container image creation with multi-stage builds
+
+## Project File Structure
 
 ```bash
 theburgers/
-├── .env                      # Environment variable file
-├── descriptions.json         # Dynamic descriptions file
-├── Dockerfile                # Docker multi-stage build file
-├── docker-compose.yml        # Docker Compose configuration file
-├── jest.config.js            # Jest configuration file
-├── package.json              # Dependency and script management file
-├── package-lock.json         # npm dependency lock file
-├── tsconfig.json             # TypeScript compilation configuration file
-├── README.md                 # Project description and usage, including descriptions of auto-generated code
-├── src/                      # Source code directory
-│   ├── application.ts        # 🆕 Central service lifecycle manager (dependency injection, graceful shutdown)
-│   ├── config.ts             # Environment variable and configuration management module
-│   ├── constants.ts          # 🆕 Extended constants management (group characters, colors, ban actions, etc.)
-│   ├── types.ts              # 🆕 Centralized type definitions and interfaces
-│   ├── utils.ts              # 🆕 Common utility classes (BanUtils, DateUtils, IntervalManager, etc.)
-│   ├── descriptionService.ts # Dynamic phrase loading and file watching service
-│   ├── discordService.ts     # Discord client and message sending module
-│   ├── countManager.ts       # Pattern detection, threshold notifications, cooldown management
-│   ├── chzzkService.ts       # CHZZK chat integration and system message processing
-│   └── index.ts              # Simplified application entry point
-└── __tests__/                # Comprehensive test files directory
-    ├── application.test.ts        # 🆕 Application class tests (lifecycle, graceful shutdown)
-    ├── utils.test.ts              # 🆕 Utility classes tests (BanUtils, DateUtils, etc.)
-    ├── config.test.ts             # config module test
-    ├── descriptionService.test.ts # File watching, random selection, error handling tests
-    ├── discordService.test.ts     # Discord client lifecycle and error handling tests
-    ├── countManager.test.ts       # Constants-based dynamic tests, threshold validation
-    └── chzzkService.test.ts       # Message processing, ban system, event handling tests
-
+├── .env                       # Environment variables file (including Supabase settings)
+├── .env.example               # 🆕 Environment variables example file
+├── config/descriptions.json   # Dynamic description phrases file
+├── Dockerfile                 # Docker multi-stage build file
+├── docker-compose.yml         # Docker Compose configuration file
+├── package.json               # Dependency and script management file
+├── src/                       # Source code directory
+│   ├── application.ts         # Central service lifecycle manager
+│   ├── config.ts              # Environment variable and configuration management module
+│   ├── constants.ts           # Extended constants management (for fallback)
+│   ├── types.ts               # Centralized type definitions and interfaces
+│   ├── utils.ts               # Common utility classes
+│   ├── descriptionService.ts  # Dynamic phrase loading and file watching service
+│   ├── discordService.ts      # Discord client and message sending module
+│   ├── countManager.ts        # 🔄 Dynamic pattern detection, threshold notifications, cooldown management
+│   ├── chzzkService.ts        # 🔄 CHZZK chat integration and dynamic pattern processing
+│   ├── index.ts               # 🔄 Web server integrated application entry point
+│   ├── webServer.ts           # 🆕 Web server integration manager
+│   ├── types/                 # 🆕 Type definitions directory
+│   │   └── database.ts        # 🆕 Supabase database types
+│   ├── database/              # 🆕 Database integration
+│   │   └── supabaseClient.ts  # 🆕 Supabase client configuration
+│   ├── config/                # 🆕 Dynamic configuration system
+│   │   ├── SupabaseConfigurationService.ts  # 🆕 Configuration service
+│   │   └── DynamicConstants.ts              # 🆕 Dynamic constants management
+│   ├── web/                   # 🆕 Web interface
+│   │   ├── configApi.ts       # 🆕 REST API endpoints
+│   │   └── public/            # 🆕 Web dashboard
+│   │       ├── dashboard.html # 🆕 Main dashboard UI
+│   │       ├── css/dashboard.css  # 🆕 Responsive styling
+│   │       └── js/dashboard.js    # 🆕 Frontend logic
+│   └── migration/             # 🆕 Data migration
+│       └── supabaseMigration.ts   # 🆕 Existing data migration script
+├── docs/                      # 📚 Documentation directory
+│   ├── README.md              # Korean documentation
+│   ├── README.en.md           # English documentation (current file)
+│   ├── CLAUDE.md              # Claude Code development guide
+│   └── DYNAMIC_CONFIG_SETUP.md  # 🆕 Dynamic configuration system setup guide
+└── __tests__/                 # Comprehensive test files directory
+    ├── application.test.ts         # Application class tests
+    ├── utils.test.ts               # Utility classes tests
+    ├── config.test.ts              # config module tests
+    ├── descriptionService.test.ts  # File watching, random selection, error handling tests
+    ├── discordService.test.ts      # Discord client lifecycle and error handling tests
+    ├── countManager.test.ts        # Dynamic pattern-based tests, threshold validation
+    └── chzzkService.test.ts        # Message processing, ban system, event handling tests
 ```
 
+## How to Use
 
-## How to use
+### 🚀 Quick Start (Dynamic Configuration System)
 
-### 1. Installation
-
-First, go to the project directory and install the dependencies:
-
+1. **Clone Project and Install Dependencies**
 ```bash
+git clone https://github.com/your-repo/theburgers.git
+cd theburgers
 npm install
 ```
 
-### 2. Configure environment variables
+2. **Set up Supabase Project**
+- Create a new project on [Supabase](https://supabase.com)
+- Note down the project URL and API keys
 
-Create an `.env` file in the root of your project and set the necessary environment variables like below:
-
-```dotenv
+3. **Configure Environment Variables**
+Create a `.env` file and configure the required values:
+```bash
+# Existing Discord/CHZZK Configuration
 DISCORD_TOKEN=your_discord_bot_token
 DISCORD_ALERT_CHANNEL_ID=your_discord_alert_channel_id
 DISCORD_BAN_CHANNEL_ID=your_discord_ban_channel_id
 NID_AUTH=your_nid_auth_token
 NID_SESSION=your_nid_session_token
+
+# 🆕 Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# 🆕 Web Server Configuration
+WEB_PORT=3000
+ENABLE_WEB_SERVER=true
+ALLOWED_ORIGINS=http://localhost:3000
 ```
 
-### 3. Set up dynamic description wording
+4. **Initialize Database**
+Run the SQL scripts from [Dynamic Configuration System Setup Guide](./DYNAMIC_CONFIG_SETUP.md) in the Supabase SQL editor.
 
-Create a `descriptions.json` file in the root of your project. Here's an example
-
-```json
-{
-  "burger": ["Song Jae-wook burger sprinkles lol"],
-  "chicken": ["Song Jae-wook chicken sprinkles lol"],
-  "pizza": ["Song Jae-wook pizza sprinkles lol"]
-}
-````
-
-### 4. Build and run
-
-Compile the TypeScript code and create it in the `dist/` folder:
-
+5. **Build and Run**
 ```bash
 npm run build
-```
-
-Once the build is complete, run the application:
-
-```bash
 npm start
 ```
 
-### 5. Development Mode
+6. **Access Web Dashboard** 🎉
+Open your browser and navigate to `http://localhost:3000` to manage detection groups!
 
-During development, you can use the following command to automatically watch and compile TypeScript files:
+### 📊 Web Dashboard Features
 
+#### Detection Group Management
+- **Add Groups**: Create new detection pattern groups (e.g., 'ramen', 'tteokbokki', etc.)
+- **Edit Groups**: Configure character sequences, colors, emojis, and thresholds individually
+- **Real-time Preview**: See configuration changes immediately
+- **Group Activation/Deactivation**: Temporarily disable specific groups
+- **Search and Filter**: Easy management even with many groups
+
+#### System Settings
+- **Global Threshold**: Set default threshold for all groups
+- **Alert Cooldown**: Configure minimum interval between consecutive alerts
+- **Count Reset**: Set automatic count reset interval
+
+#### Real-time Monitoring
+- **Current Counts**: Live tracking of count status for each group
+- **System Status**: Connection status, uptime, number of active groups
+- **Auto Refresh**: Automatic status updates every 30 seconds
+
+### 🔧 Development Mode
+
+For development with automatic TypeScript file watching and compilation:
 ```bash
 npm run dev
 ```
 
-### 6. Testing
+### 🧪 Testing
 
-To run unit tests, use the following command:
-
+Run unit tests:
 ```bash
 npm run test
+
+# Run specific tests
+npm test -- --testNamePattern="SupabaseConfiguration"
+npm test -- --testNamePattern="DynamicConstants"
 ```
 
-#### Running Individual Tests
-If you want to test specific services or features:
+### 🐳 Using Docker
 
 ```bash
-# Run specific test file
-npm test -- --testNamePattern="utils"
-npm test -- --testNamePattern="Application"
-
-# Run specific test case
-npm test -- --testNamePattern="BanUtils"
-```
-
-If all tests pass, you can verify that the refactored architecture and new utility classes are working correctly.
-
-### 7. Using Docker
-
-#### Docker Build and Run
-
-The project supports multi-stage builds using Docker.  
-You can build a Docker image with the command below:
-
-```bash
+# Build Docker image
 docker build -t theburgers .
-```
 
-Then run the Docker container:
-```bash
-docker run -d --env-file .env theburgers
-```
+# Run container
+docker run -d --env-file .env -p 3000:3000 theburgers
 
-#### Using Docker Compose
-You can also use Docker Compose to manage multiple services simultaneously.
-
-1. Set the required environment variables in the .env file.
-2. Run the following command in a terminal:
-> your `.env` file should be ready.
-```bash
+# Using Docker Compose
 docker-compose up -d
 ```
-Perform an automatic update by checking Docker Hub every 5 minutes for the latest image.
+
+## API Endpoints 🆕
+
+RESTful API for programmatic configuration management:
+
+### Group Management
+- `GET /api/config/groups` - List all detection groups
+- `POST /api/config/groups` - Create new detection group
+- `PUT /api/config/groups/:id` - Update existing group
+- `DELETE /api/config/groups/:id` - Delete group
+
+### System Settings
+- `GET /api/config/settings` - Get system settings
+- `PUT /api/config/settings/:key` - Update settings
+
+### System Control
+- `POST /api/config/reload` - Force configuration reload
+- `GET /api/config/status` - System status and statistics
+- `GET /api/config/validation` - Configuration validation
+
+## Migration Guide 🔄
+
+How to upgrade from the hardcoded version to the dynamic configuration system:
+
+1. **Backup**: Back up existing `descriptions.json` file
+2. **Add Environment Variables**: Add Supabase-related environment variables
+3. **Database Setup**: Run SQL scripts
+4. **Run Migration**: 
+   ```bash
+   npx ts-node src/migration/supabaseMigration.ts
+   ```
+5. **Verify Configuration**: Check migrated data in the web dashboard
+
+For detailed instructions, see the [Dynamic Configuration System Setup Guide](./DYNAMIC_CONFIG_SETUP.md).
 
 ## CI/CD & GitHub Actions
 
-This project is leveraging GitHub Actions to set up an automated CI/CD pipeline. The main workflows are as follows:
+This project leverages GitHub Actions to set up an automated CI/CD pipeline:
 
-### 1. Build and Deploy Docker Image.
-
-This workflow, which runs when a push is made to the `main` branch or a release is issued, builds a Docker image and deploys it to Docker Hub.  
+### 1. Build and Deploy Docker Image
+This workflow runs when a push is made to the `main` branch or a release is issued, builds a Docker image and deploys it to Docker Hub.  
 Workflow file: `.github/workflows/deploy.yml`
 
 ### 2. Run Tests on Pull Requests
-This workflow runs when a pull request is created that targets the `main` branch and ensures that all tests pass before the PR can be merged.
+This workflow runs when a pull request is created that targets the `main` branch and ensures that all tests pass before the PR can be merged.  
 Workflow file: `.github/workflows/test.yml`
 
-### Branching strategy and protection rules
+### Branching Strategy and Protection Rules
+- **develop**: Development branch for new features and bug fixes
+- **main**: Deployment branch where only tested and code-reviewed changes are merged
 
-This project uses two main branches:
-
-* develop: the branch for development, where new features and bug fixes will be done.
-* main: the branch for deployment, where only changes that have been tested and code reviewed are merged.
-
-We have set up GitHub Branch Protection Rules to prevent direct pushes to the main branch and only merge via PRs, meaning that only PRs that have passed testing and CI will be merged into the main branch.
+GitHub Branch Protection Rules prevent direct pushes to the main branch and only allow merges via PRs that have passed testing and CI.
 
 ## Code Architecture & Refactoring
 
-### 🏗️ Architecture Improvements
+### 🏗️ Architecture Innovations
 
-- **Dependency Injection Pattern:** Centralized service management through `Application` class
-- **Enhanced Type Safety:** Central interface management in `types.ts`
-- **Utility-Based Design:** Reusable `BanUtils`, `DateUtils`, `ArrayUtils` classes
-- **Improved Resource Management:** `IntervalManager` and `CleanupableService` interface
+#### Dynamic Configuration System 🆕
+- **Web-based Management**: Hardcoded → Dynamic web interface
+- **Supabase Integration**: PostgreSQL + Realtime for scalable data storage
+- **Real-time Application**: Configuration changes apply instantly without server restart
+- **Unlimited Expansion**: Add as many detection groups as desired
+- **Type Safety**: TypeScript ensures database schema type safety
+
+#### Existing Architecture Improvements
+- **Dependency Injection Pattern**: Centralized service management through `Application` class
+- **Enhanced Type Safety**: Central interface management in `types.ts`
+- **Utility-Based Design**: Reusable `BanUtils`, `DateUtils`, `ArrayUtils` classes
+- **Improved Resource Management**: `IntervalManager` and `CleanupableService` interface
 
 ### 🔧 Code Quality Enhancements
 
-- **Constants Centralization:** All configuration values managed in `constants.ts` (group characters, colors, ban actions)
-- **Standardized Error Handling:** Consistent error handling patterns across all services
-- **Expanded Test Coverage:** 73 tests achieving 97.3% success rate
-- **Graceful Shutdown:** Safe termination process through signal handlers
+- **Dynamic Configuration Loading**: Hardcoded constants → Database-based dynamic loading
+- **Standardized Error Handling**: Consistent error handling patterns across all services
+- **Fallback System**: Automatic fallback to default configuration when Supabase unavailable
+- **Expanded Test Coverage**: Comprehensive testing including dynamic configuration system
+- **Graceful Shutdown**: Safe termination process through signal handlers
 
 ### 🧪 Testing Strategy
 
-- **Unit Tests:** Independent tests for each utility class
-- **Integration Tests:** Complete Application lifecycle testing
-- **Korean Context Tests:** Ban message parsing and processing validation
-- **Mocking Strategy:** Complete isolation of external API dependencies
+- **Unit Tests**: Independent tests for each utility class
+- **Integration Tests**: Complete Application lifecycle testing
+- **Dynamic Configuration Tests**: Validation of configuration changes and application process
+- **API Tests**: Web API endpoint functionality testing
+- **Mocking Strategy**: Complete isolation of external API dependencies
 
 ### 🚀 Performance Optimizations
 
-- **Memory Leak Prevention:** Centralized interval management
-- **Type Validation:** Reduced compile-time errors
-- **Code Reusability:** 30% reduction in duplicate code
-- **Scalability:** Only constants.ts modification needed for new food groups
+- **Real-time Synchronization**: Instant configuration sync via Supabase Realtime
+- **Caching Strategy**: 30-second TTL balancing performance and real-time capabilities
+- **Memory Leak Prevention**: Centralized interval management
+- **Code Reusability**: 50% reduction in duplicate code
+- **Scalability**: Unlimited group management through web interface
 
 ### 📚 Development History
 
-- **Initial Development:** Auto-generation through ChatGPT o3 mini (99% code)
-- **Refactoring:** Comprehensive code quality improvement via Claude 3.5 Sonnet
-- **Architecture Redesign:** Dependency injection, utility patterns, type safety enhancement
-- **Test System Construction:** Comprehensive test suite and CI/CD integration
+- **Initial Development**: Auto-generation through ChatGPT o3 mini (99% code)
+- **Refactoring**: Comprehensive code quality improvement via Claude 3.5 Sonnet
+- **Dynamic System Implementation**: Hardcoded → Supabase-based dynamic configuration system 🆕
+- **Web Interface Development**: User-friendly management dashboard construction 🆕
+- **Test System Construction**: Comprehensive test suite and CI/CD integration
 
-## How to contribute
-If you would like to contribute, please follow the steps below:
-1. Fork this repository.
-2. Create a new branch:  
-  `git checkout -b feature/your-feature-name`
-3. commit your changes:  
-  `git commit -m 'Add some feature'`
-4. Push to the remote repository:  
-  `git push origin feature/your-feature-name`
-5. Generate a pull request.
+## How to Contribute
+
+If you would like to contribute, please follow these steps:
+
+1. Fork this repository
+2. Create a new branch: `git checkout -b feature/your-feature-name`
+3. Commit your changes: `git commit -m 'Add some feature'`
+4. Push to the remote repository: `git push origin feature/your-feature-name`
+5. Create a Pull Request
+
+### Development Guidelines
+
+- **Dynamic Configuration**: Add new detection patterns through the web interface
+- **Type Safety**: Adhere to TypeScript type definitions
+- **Test Writing**: Tests are mandatory for new features
+- **Documentation Updates**: Update related documentation when features change
 
 ## License
+
 This project is distributed under the MIT license. Please refer to the LICENSE file for details.
+
+---
+
+## 🎉 Innovation Summary
+
+**Hardcoded Era** → **Dynamic Configuration Era**
+- Editing `constants.ts` → Clicking in web browser
+- Server restart required → Real-time application
+- 3 fixed groups → Unlimited groups
+- Developer-only modifications → Anyone can manage via web
+
+Now you can add any patterns like '젖라면' (ramen), '젖떡볶이' (tteokbokki), '젖치킨' (chicken), etc. **in real-time through a web browser** beyond just '젖버거' and '젖피자'! 🚀

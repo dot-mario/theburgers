@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>감지 그룹 설정 대시보드</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🍔 동적 감지 설정 대시보드</h1>
+            <div class="header-actions">
+                <button id="refreshBtn" class="btn btn-secondary">🔄 새로고침</button>
+                <button id="addGroupBtn" class="btn btn-primary">+ 그룹 추가</button>
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">연결됨</span>
+                </div>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="groups">감지 그룹</button>
+            <button class="tab-btn" data-tab="settings">시스템 설정</button>
+            <button class="tab-btn" data-tab="monitor">실시간 모니터</button>
+            <button class="tab-btn" data-tab="stats">통계</button>
+        </nav>
+
+        <!-- 감지 그룹 탭 -->
+        <div id="groups" class="tab-content active">
+            <div class="controls">
+                <input type="text" id="searchGroups" placeholder="그룹 검색..." class="search-input">
+                <select id="filterStatus" class="filter-select">
+                    <option value="all">모든 상태</option>
+                    <option value="enabled">활성화만</option>
+                    <option value="disabled">비활성화만</option>
+                </select>
+            </div>
+
+            <div class="groups-grid" id="groupsGrid">
+                <!-- 그룹 카드들이 여기에 동적으로 추가됩니다 -->
+            </div>
+        </div>
+
+        <!-- 시스템 설정 탭 -->
+        <div id="settings" class="tab-content">
+            <div class="settings-section">
+                <h3>전역 설정</h3>
+                <div class="setting-item">
+                    <label for="countThreshold">카운트 임계값</label>
+                    <input type="number" id="countThreshold" min="1" max="100" value="5">
+                    <span class="setting-description">알림을 트리거할 최소 카운트 수</span>
+                </div>
+                <div class="setting-item">
+                    <label for="alertCooldown">알림 쿨다운 (분)</label>
+                    <input type="number" id="alertCooldown" min="1" max="60" value="5">
+                    <span class="setting-description">같은 그룹의 연속 알림 간 최소 간격</span>
+                </div>
+                <div class="setting-item">
+                    <label for="resetInterval">카운트 리셋 간격 (분)</label>
+                    <input type="number" id="resetInterval" min="1" max="60" value="1">
+                    <span class="setting-description">자동으로 카운트를 리셋하는 간격</span>
+                </div>
+                <button id="saveSettingsBtn" class="btn btn-primary">설정 저장</button>
+            </div>
+        </div>
+
+        <!-- 실시간 모니터 탭 -->
+        <div id="monitor" class="tab-content">
+            <div class="monitor-section">
+                <h3>실시간 카운트 상태</h3>
+                <div class="monitor-grid" id="monitorGrid">
+                    <!-- 실시간 카운트 표시 -->
+                </div>
+            </div>
+            <div class="monitor-section">
+                <h3>시스템 상태</h3>
+                <div class="system-status" id="systemStatus">
+                    <!-- 시스템 상태 정보 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 통계 탭 -->
+        <div id="stats" class="tab-content">
+            <div class="stats-section">
+                <h3>그룹 통계</h3>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- 통계 정보 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 그룹 편집 모달 -->
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">그룹 편집</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="groupForm">
+                    <div class="form-group">
+                        <label for="groupName">그룹 이름</label>
+                        <input type="text" id="groupName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="displayName">표시 이름</label>
+                        <input type="text" id="displayName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="emoji">이모지</label>
+                        <input type="text" id="emoji" maxlength="4" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="color">색상</label>
+                        <div class="color-input-group">
+                            <input type="color" id="colorPicker">
+                            <input type="text" id="colorHex" placeholder="#FFFFFF">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="threshold">임계값</label>
+                        <input type="number" id="threshold" min="1" max="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label>문자 시퀀스</label>
+                        <div class="characters-container" id="charactersContainer">
+                            <!-- 문자 입력 필드들이 여기에 동적으로 추가됩니다 -->
+                        </div>
+                        <button type="button" id="addCharacterBtn" class="btn btn-secondary">+ 문자 추가</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enabled" checked>
+                            <span class="checkmark"></span>
+                            활성화
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>미리보기</label>
+                        <div class="preview" id="preview">
+                            <span id="previewEmoji">🍔</span>
+                            <span id="previewText">젖버거 알림</span>
+                            <span id="previewEmoji2">🍔</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="cancelBtn" class="btn btn-secondary">취소</button>
+                <button type="button" id="testPatternBtn" class="btn btn-outline">패턴 테스트</button>
+                <button type="submit" id="saveGroupBtn" class="btn btn-primary">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 토스트 -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <span class="toast-icon"></span>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

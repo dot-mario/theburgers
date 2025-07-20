@@ -3,12 +3,18 @@ import { DiscordService } from '../src/discordService';
 import { DescriptionService } from '../src/descriptionService';
 import { CountManager } from '../src/countManager';
 import { ChzzkService } from '../src/chzzkService';
+import { SupabaseConfigurationService } from '../src/config/SupabaseConfigurationService';
+import { DynamicConstants } from '../src/config/DynamicConstants';
+import { testSupabaseConnection } from '../src/database/supabaseClient';
 
 // Mock all services
 jest.mock('../src/discordService');
 jest.mock('../src/descriptionService');
 jest.mock('../src/countManager');
 jest.mock('../src/chzzkService');
+jest.mock('../src/config/SupabaseConfigurationService');
+jest.mock('../src/config/DynamicConstants');
+jest.mock('../src/database/supabaseClient');
 
 describe('Application', () => {
   let application: Application;
@@ -16,9 +22,14 @@ describe('Application', () => {
   let mockDescriptionService: jest.Mocked<DescriptionService>;
   let mockCountManager: jest.Mocked<CountManager>;
   let mockChzzkService: jest.Mocked<ChzzkService>;
+  let mockConfigService: jest.Mocked<SupabaseConfigurationService>;
+  let mockDynamicConstants: jest.Mocked<DynamicConstants>;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Mock Supabase connection
+    (testSupabaseConnection as jest.Mock).mockResolvedValue(true);
     
     // Setup mocks
     mockDiscordService = {
@@ -39,11 +50,22 @@ describe('Application', () => {
       cleanup: jest.fn()
     } as any;
 
+    mockConfigService = {
+      loadConfiguration: jest.fn().mockResolvedValue({}),
+      cleanup: jest.fn()
+    } as any;
+
+    mockDynamicConstants = {
+      cleanup: jest.fn()
+    } as any;
+
     // Mock constructors
     (DiscordService as jest.MockedClass<typeof DiscordService>).mockImplementation(() => mockDiscordService);
     (DescriptionService as jest.MockedClass<typeof DescriptionService>).mockImplementation(() => mockDescriptionService);
     (CountManager as jest.MockedClass<typeof CountManager>).mockImplementation(() => mockCountManager);
     (ChzzkService as jest.MockedClass<typeof ChzzkService>).mockImplementation(() => mockChzzkService);
+    (SupabaseConfigurationService as jest.MockedClass<typeof SupabaseConfigurationService>).mockImplementation(() => mockConfigService);
+    (DynamicConstants as jest.MockedClass<typeof DynamicConstants>).mockImplementation(() => mockDynamicConstants);
 
     application = new Application();
   });
@@ -70,7 +92,8 @@ describe('Application', () => {
       expect(CountManager).toHaveBeenCalledWith(
         expect.any(Number), // CONFIG.COUNT_THRESHOLD
         mockDescriptionService,
-        mockDiscordService
+        mockDiscordService,
+        mockDynamicConstants
       );
     });
 
@@ -79,7 +102,8 @@ describe('Application', () => {
 
       expect(ChzzkService).toHaveBeenCalledWith(
         mockCountManager,
-        mockDiscordService
+        mockDiscordService,
+        mockDynamicConstants
       );
     });
 
