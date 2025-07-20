@@ -1,12 +1,7 @@
 // src/descriptionService.ts
 import { readFileSync, watchFile, unwatchFile } from 'fs';
-
-export interface DescriptionData {
-  burger: string[];
-  chicken: string[];
-  pizza: string[];
-  "!play": string[];
-}
+import { DescriptionData, CleanupableService } from './types';
+import { ArrayUtils } from './utils';
 
 const DEFAULT_DESCRIPTIONS: DescriptionData = {
   burger: ["송재욱 버거 뿌린다 ㅋㅋ"],
@@ -15,7 +10,7 @@ const DEFAULT_DESCRIPTIONS: DescriptionData = {
   "!play": ["송재욱 공 굴린다 ㅋㅋ"]
 };
 
-export class DescriptionService {
+export class DescriptionService implements CleanupableService {
   private descriptions: DescriptionData = DEFAULT_DESCRIPTIONS;
   private filePath: string;
 
@@ -44,8 +39,7 @@ export class DescriptionService {
   public getRandomDescription(group: keyof DescriptionData): string {
     const groupDescriptions = this.descriptions[group];
     if (!groupDescriptions || groupDescriptions.length === 0) return "";
-    const randomIndex = Math.floor(Math.random() * groupDescriptions.length);
-    return groupDescriptions[randomIndex];
+    return ArrayUtils.getRandomElement(groupDescriptions) || "";
   }
 
   public cleanup(): void {

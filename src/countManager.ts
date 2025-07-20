@@ -3,22 +3,14 @@ import { EmbedBuilder } from 'discord.js';
 import { CONFIG } from './config';
 import { DescriptionService } from './descriptionService';
 import { DiscordService } from './discordService';
-import { ALERT_COOLDOWN_DURATION } from './constants';
+import { ALERT_COOLDOWN_DURATION, COUNT_RESET_INTERVAL, GROUP_CHARACTERS, GROUP_COLORS, GROUP_EMOJIS } from './constants';
+import { GroupType, GroupCount, CleanupableService } from './types';
+import { IntervalManager } from './utils';
 
-export type GroupType = 'burger' | 'chicken' | 'pizza';
-
-export interface GroupCount {
-  [letter: string]: number;
-}
-
-export class CountManager {
-  private groupCounts: Record<GroupType, GroupCount> = {
-    burger: { '젖': 0, '버': 0, '거': 0 },
-    chicken: { '젖': 0, '치': 0, '킨': 0 },
-    pizza: { '젖': 0, '피': 0, '자': 0 }
-  };
+export class CountManager implements CleanupableService {
+  private groupCounts: Record<GroupType, GroupCount> = {} as Record<GroupType, GroupCount>;
   private playCount = 0;
-  private resetIntervalId: NodeJS.Timeout;
+  private intervalManager = new IntervalManager();
   private alertCooldowns: Record<GroupType, number> = {
     burger: 0,
     chicken: 0,
@@ -30,10 +22,20 @@ export class CountManager {
     private readonly descriptionService: DescriptionService,
     private readonly discordService: DiscordService
   ) {
-    // 1분마다 카운트 초기화
-    this.resetIntervalId = setInterval(() => {
+    this.initializeGroupCounts();
+    this.intervalManager.createInterval(() => {
       this.resetAllCounts();
-    }, 60 * 1000);
+    }, COUNT_RESET_INTERVAL);
+  }
+
+  private initializeGroupCounts(): void {
+    this.groupCounts = {} as Record<GroupType, GroupCount>;
+    Object.entries(GROUP_CHARACTERS).forEach(([group, characters]) => {
+      this.groupCounts[group as GroupType] = {};
+      characters.forEach(char => {
+        this.groupCounts[group as GroupType][char] = 0;
+      });
+    });
   }
 
   public updateGroupCount(group: GroupType, letter: string): void {
@@ -75,27 +77,15 @@ export class CountManager {
   private createGroupEmbed(group: GroupType): EmbedBuilder {
     const embed = new EmbedBuilder();
     const description = this.descriptionService.getRandomDescription(group);
-    switch (group) {
-      case 'burger':
-        embed.setColor(0xd4b799)
-             .setTitle("🍔 젖버거 알림 🍔")
-             .setDescription(description)
-             .setURL(CONFIG.CHZZK_LIVE_URL);
-        break;
-      case 'chicken':
-        embed.setColor(0xffa500)
-             .setTitle("🍗 젖치킨 알림 🍗")
-             .setDescription(description)
-             .setURL(CONFIG.CHZZK_LIVE_URL);
-        break;
-      case 'pizza':
-        embed.setColor(0xff0000)
-             .setTitle("🍕 젖피자 알림 🍕")
-             .setDescription(description)
-             .setURL(CONFIG.CHZZK_LIVE_URL);
-        break;
-    }
-    return embed;
+    const emoji = GROUP_EMOJIS[group];
+    const color = GROUP_COLORS[group];
+    const groupName = group === 'burger' ? '버거' : group === 'chicken' ? '치킨' : '피자';
+    
+    return embed
+      .setColor(color)
+      .setTitle(`${emoji} 젖${groupName} 알림 ${emoji}`)
+      .setDescription(description)
+      .setURL(CONFIG.CHZZK_LIVE_URL);
   }
 
   private resetGroupCount(group: GroupType): void {
@@ -108,6 +98,6 @@ export class CountManager {
   }
 
   public cleanup(): void {
-    clearInterval(this.resetIntervalId);
+    this.intervalManager.clearAllIntervals();
   }
 }

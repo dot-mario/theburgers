@@ -1,8 +1,9 @@
 // src/discordService.ts
 import { Client as DiscordClient, GatewayIntentBits, TextChannel, EmbedBuilder } from 'discord.js';
 import { CONFIG } from './config';
+import { CleanupableService } from './types';
 
-export class DiscordService {
+export class DiscordService implements CleanupableService {
   private client: DiscordClient;
 
   constructor() {
@@ -54,6 +55,12 @@ export class DiscordService {
       console.log("Message sent:", message);
     } catch (error) {
       console.error("Failed to send message:", error);
+    }
+  }
+
+  public cleanup(): void {
+    if (this.client) {
+      this.client.destroy();
     }
   }
 }
