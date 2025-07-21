@@ -2,6 +2,17 @@
 
 이 가이드는 하드코딩된 감지 패턴을 Supabase 기반 동적 설정 시스템으로 전환하는 방법을 설명합니다.
 
+## 📋 목차
+- [신규 설치](#신규-설치)
+- [기존 시스템 마이그레이션](#기존-시스템-마이그레이션)
+- [웹 인터페이스 사용법](#웹-인터페이스-사용법)
+- [API 엔드포인트](#api-엔드포인트)
+- [문제 해결](#문제-해결)
+
+---
+
+## 신규 설치
+
 ## 1. Supabase 프로젝트 설정
 
 ### 1.1 Supabase 프로젝트 생성
@@ -253,6 +264,189 @@ pg_dump "postgresql://..." > backup.sql
 ```bash
 # 백업에서 복구
 psql "postgresql://..." < backup.sql
+```
+
+---
+
+## 기존 시스템 마이그레이션
+
+기존 하드코딩된 시스템에서 동적 설정 시스템으로 업그레이드하는 방법입니다.
+
+### 🔄 업그레이드 개요
+
+**Before (하드코딩 시스템)**:
+- `src/constants.ts`에서 '젖버거', '젖피자' 패턴 하드코딩
+- 새 패턴 추가 시 코드 수정 → 서버 재시작 필요
+- 개발자만 패턴 관리 가능
+- 제한된 그룹 (3개 고정)
+
+**After (동적 설정 시스템)**:
+- Supabase 데이터베이스에서 패턴 관리
+- 웹 대시보드(`http://localhost:3000`)에서 실시간 관리
+- 서버 재시작 없이 즉시 적용
+- 무제한 그룹 추가 가능
+- 누구나 웹에서 쉽게 관리
+
+### 📋 사전 준비
+
+#### 1. 기존 데이터 백업
+
+업그레이드 전 중요한 설정 파일들을 백업하세요:
+
+```bash
+# 현재 디렉터리에 백업 폴더 생성
+mkdir backup_$(date +%Y%m%d_%H%M%S)
+
+# 중요 파일 백업
+cp .env backup_*/
+cp config/descriptions.json backup_*/
+cp src/constants.ts backup_*/
+
+echo "✅ 백업 완료!"
+```
+
+#### 2. 버전 호환성 확인
+
+현재 프로젝트가 동적 설정 시스템과 호환되는지 확인:
+
+```bash
+# package.json에서 필수 의존성 확인
+grep -E "(typescript|express|cors)" package.json
+
+# 필요한 파일 구조 확인
+ls -la src/types/ src/database/ src/config/ src/web/ 2>/dev/null || echo "⚠️ 동적 설정 파일들이 없습니다"
+```
+
+### 🛠️ 단계별 마이그레이션
+
+#### 단계 1: 기존 신규 설치 과정 완료
+위의 [신규 설치](#신규-설치) 섹션의 1-3단계를 완료하세요.
+
+#### 단계 2: 데이터 마이그레이션 실행
+
+자동 마이그레이션 스크립트 실행:
+
+```bash
+# 기존 하드코딩된 데이터를 Supabase로 마이그레이션
+npx ts-node src/migration/supabaseMigration.ts
+```
+
+예상 출력:
+```
+🚀 Starting Supabase migration...
+✅ Supabase connection successful
+📊 Found 3 hardcoded groups to migrate
+✅ Migrated group: burger (젖버거)
+✅ Migrated group: pizza (젖피자)  
+✅ Migrated group: chicken (젖치킨)
+📋 Migration completed successfully!
+```
+
+#### 단계 3: 설정 검증
+
+1. **애플리케이션 시작**
+```bash
+npm start
+```
+
+2. **웹 대시보드 접속**
+   - 브라우저에서 `http://localhost:3000` 접속
+   - 마이그레이션된 그룹들이 표시되는지 확인
+
+3. **기능 테스트**
+   - 웹에서 새 그룹 추가해보기
+   - 기존 그룹 수정해보기
+   - 실시간 적용 확인
+
+#### 단계 4: 정리 및 최적화
+
+마이그레이션 완료 후 정리 작업:
+
+```bash
+# 기존 하드코딩 상수 파일 백업으로 이동 (선택사항)
+mv src/constants.ts backup_*/constants.ts.backup
+
+# 빌드 재실행으로 정리
+npm run build
+
+# 테스트 실행으로 모든 기능 검증
+npm run test
+```
+
+### 📊 마이그레이션 검증 체크리스트
+
+#### ✅ 필수 확인 항목
+
+- [ ] Supabase 프로젝트 생성 및 데이터베이스 스키마 설정
+- [ ] 환경변수 파일(.env) 업데이트 완료
+- [ ] `npm install` 및 `npm run build` 성공
+- [ ] 마이그레이션 스크립트 실행 성공
+- [ ] 웹 대시보드(`http://localhost:3000`) 접속 가능
+- [ ] 기존 그룹들(젖버거, 젖피자, 젖치킨) 표시 확인
+- [ ] 새 그룹 추가 기능 테스트
+- [ ] 그룹 수정 기능 테스트
+- [ ] 그룹 삭제 기능 테스트
+- [ ] CHZZK 채팅 모니터링 정상 작동
+- [ ] Discord 알림 정상 전송
+
+#### 🔄 선택 확인 항목
+
+- [ ] 백업 파일 정리
+- [ ] 추가 보안 설정 (RLS 정책 세부 조정)
+- [ ] 성능 모니터링 설정
+- [ ] 로그 확인 및 최적화
+
+### 🎯 업그레이드 후 활용법
+
+#### 새로운 기능 활용
+
+1. **무제한 그룹 추가**
+   ```
+   웹 대시보드 → Groups 탭 → Add New Group
+   예: '젖라면', '젖떡볶이', '젖치킨', '젖삼겹살' 등
+   ```
+
+2. **실시간 설정 변경**
+   ```
+   임계값 조정, 색상 변경, 이모지 변경 등이 즉시 반영
+   ```
+
+3. **시스템 모니터링**
+   ```
+   Monitor 탭에서 실시간 카운트 및 시스템 상태 확인
+   ```
+
+4. **API 활용**
+   ```bash
+   # 그룹 목록 조회
+   curl http://localhost:3000/api/config/groups
+   
+   # 새 그룹 추가
+   curl -X POST http://localhost:3000/api/config/groups \
+        -H "Content-Type: application/json" \
+        -d '{"name":"ramen","display_name":"젖라면","characters":["젖","라","면"],"color":16776960,"emoji":"🍜","threshold":3}'
+   ```
+
+### 🔙 롤백 방법
+
+만약 문제가 발생하여 이전 시스템으로 돌아가야 하는 경우:
+
+```bash
+# 1. 현재 프로세스 중단
+pkill -f "node.*theburgers"
+
+# 2. 백업에서 파일 복원
+cp backup_*/constants.ts src/
+cp backup_*/.env ./
+
+# 3. 환경변수에서 Supabase 설정 제거 또는 주석 처리
+sed -i 's/^SUPABASE/#SUPABASE/g' .env
+sed -i 's/^WEB_PORT/#WEB_PORT/g' .env
+sed -i 's/^ENABLE_WEB_SERVER/#ENABLE_WEB_SERVER/g' .env
+
+# 4. 이전 버전 빌드 및 실행
+npm run build
+npm start
 ```
 
 이제 하드코딩된 감지 패턴 대신 웹 인터페이스를 통해 동적으로 감지 그룹을 관리할 수 있습니다!

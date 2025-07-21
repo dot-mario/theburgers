@@ -104,7 +104,7 @@ theburgers/
 │   ├── README.md              # Korean documentation
 │   ├── README.en.md           # English documentation (current file)
 │   ├── CLAUDE.md              # Claude Code development guide
-│   └── DYNAMIC_CONFIG_SETUP.md  # 🆕 Dynamic configuration system setup guide
+│   └── DYNAMIC_CONFIG_SETUP.md  # Setup guide (new installation + migration)
 └── __tests__/                 # Comprehensive test files directory
     ├── application.test.ts         # Application class tests
     ├── utils.test.ts               # Utility classes tests
@@ -232,20 +232,10 @@ RESTful API for programmatic configuration management:
 - `GET /api/config/status` - System status and statistics
 - `GET /api/config/validation` - Configuration validation
 
-## Migration Guide 🔄
+## Setup and Migration 🔧
 
-How to upgrade from the hardcoded version to the dynamic configuration system:
-
-1. **Backup**: Back up existing `descriptions.json` file
-2. **Add Environment Variables**: Add Supabase-related environment variables
-3. **Database Setup**: Run SQL scripts
-4. **Run Migration**: 
-   ```bash
-   npx ts-node src/migration/supabaseMigration.ts
-   ```
-5. **Verify Configuration**: Check migrated data in the web dashboard
-
-For detailed instructions, see the [Dynamic Configuration System Setup Guide](./DYNAMIC_CONFIG_SETUP.md).
+- **New Installation**: See [Dynamic Configuration System Setup Guide](./DYNAMIC_CONFIG_SETUP.md)
+- **Existing System Upgrade**: See [Migration section](./DYNAMIC_CONFIG_SETUP.md#기존-시스템-마이그레이션) in the same guide
 
 ## CI/CD & GitHub Actions
 

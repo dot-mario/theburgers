@@ -104,7 +104,7 @@ theburgers/
 │   ├── README.md              # 한국어 문서 (현재 파일)
 │   ├── README.en.md           # 영어 문서
 │   ├── CLAUDE.md              # Claude Code 개발 가이드
-│   └── DYNAMIC_CONFIG_SETUP.md  # 🆕 동적 설정 시스템 설정 가이드
+│   └── DYNAMIC_CONFIG_SETUP.md  # 설정 시스템 가이드 (신규 설치 + 마이그레이션)
 └── __tests__/                 # 포괄적인 테스트 파일 디렉터리
     ├── application.test.ts         # Application 클래스 테스트
     ├── utils.test.ts               # 유틸리티 클래스들 테스트
@@ -232,20 +232,10 @@ docker-compose up -d
 - `GET /api/config/status` - 시스템 상태 및 통계
 - `GET /api/config/validation` - 설정 유효성 검증
 
-## 마이그레이션 가이드 🔄
+## 설정 및 마이그레이션 🔧
 
-기존 하드코딩 버전에서 동적 설정 시스템으로 업그레이드하는 방법:
-
-1. **백업**: 기존 `descriptions.json` 파일 백업
-2. **환경변수 추가**: Supabase 관련 환경변수 추가
-3. **데이터베이스 설정**: SQL 스크립트 실행
-4. **마이그레이션 실행**: 
-   ```bash
-   npx ts-node src/migration/supabaseMigration.ts
-   ```
-5. **설정 확인**: 웹 대시보드에서 마이그레이션된 데이터 확인
-
-자세한 내용은 [동적 설정 시스템 설정 가이드](./DYNAMIC_CONFIG_SETUP.md)를 참조하세요.
+- **신규 설치**: [동적 설정 시스템 설정 가이드](./DYNAMIC_CONFIG_SETUP.md) 참조
+- **기존 시스템 업그레이드**: 동일 가이드의 [기존 시스템 마이그레이션](./DYNAMIC_CONFIG_SETUP.md#기존-시스템-마이그레이션) 섹션 참조
 
 ## CI/CD & GitHub Actions
 
