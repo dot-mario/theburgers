@@ -37,6 +37,8 @@ class ConfigurationDashboard {
 
         // Form events
         document.getElementById('addCharacterBtn').addEventListener('click', () => this.addCharacterInput());
+        document.getElementById('addMessageBtn').addEventListener('click', () => this.addMessageInput());
+        document.getElementById('testRandomMessageBtn').addEventListener('click', () => this.testRandomMessage());
         document.getElementById('colorPicker').addEventListener('change', (e) => this.updateColorHex(e.target.value));
         document.getElementById('colorHex').addEventListener('input', (e) => this.updateColorPicker(e.target.value));
 
@@ -242,6 +244,9 @@ class ConfigurationDashboard {
             this.addCharacterInput(char);
         });
         
+        // Alert messages
+        this.loadMessagesToForm(group.alert_messages || []);
+        
         this.updatePreview();
     }
 
@@ -255,6 +260,9 @@ class ConfigurationDashboard {
         const container = document.getElementById('charactersContainer');
         container.innerHTML = '';
         this.addCharacterInput();
+        
+        // Reset alert messages
+        this.loadMessagesToForm([]);
         
         this.updatePreview();
     }
@@ -344,6 +352,7 @@ class ConfigurationDashboard {
             color: parseInt(colorHex, 16),
             threshold: parseInt(document.getElementById('threshold').value),
             characters: characters,
+            alert_messages: this.getMessagesFromForm(),
             enabled: document.getElementById('enabled').checked
         };
     }
@@ -746,6 +755,116 @@ class ConfigurationDashboard {
         const testText = formData.characters.join('');
         
         this.showToast(`테스트 패턴: "${testText}" → ${formData.emoji} 젖${formData.display_name} 알림 ${formData.emoji}`, 'success');
+    }
+
+    addMessageInput() {
+        const container = document.getElementById('messagesContainer');
+        const messageGroup = document.createElement('div');
+        messageGroup.className = 'message-input-group';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'message-input';
+        input.placeholder = '알림 메시지를 입력하세요...';
+        input.maxLength = 200;
+        input.addEventListener('input', () => this.updateMessageCount());
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'message-remove';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', () => {
+            messageGroup.remove();
+            this.updateMessageCount();
+        });
+
+        messageGroup.appendChild(input);
+        messageGroup.appendChild(removeBtn);
+        container.appendChild(messageGroup);
+
+        this.updateMessageCount();
+        input.focus();
+    }
+
+    updateMessageCount() {
+        const container = document.getElementById('messagesContainer');
+        const inputs = container.querySelectorAll('.message-input');
+        const count = Array.from(inputs).filter(input => input.value.trim()).length;
+        
+        document.getElementById('messageCount').textContent = `${count}개 메시지`;
+    }
+
+    testRandomMessage() {
+        const container = document.getElementById('messagesContainer');
+        const inputs = container.querySelectorAll('.message-input');
+        const messages = Array.from(inputs)
+            .map(input => input.value.trim())
+            .filter(msg => msg);
+        
+        if (messages.length === 0) {
+            this.showToast('테스트할 메시지가 없습니다.', 'warning');
+            return;
+        }
+        
+        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        const preview = document.getElementById('randomMessagePreview');
+        
+        preview.textContent = `"${randomMessage}"`;
+        preview.classList.add('show');
+        
+        // 3초 후 숨기기
+        setTimeout(() => {
+            preview.classList.remove('show');
+        }, 3000);
+    }
+
+    loadMessagesToForm(messages = []) {
+        const container = document.getElementById('messagesContainer');
+        container.innerHTML = '';
+        
+        if (messages.length === 0) {
+            // 빈 메시지 표시
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'empty-messages';
+            emptyDiv.textContent = '메시지를 추가하여 다양한 알림 문구를 설정하세요.';
+            container.appendChild(emptyDiv);
+        } else {
+            messages.forEach(message => {
+                const messageGroup = document.createElement('div');
+                messageGroup.className = 'message-input-group';
+                
+                messageGroup.innerHTML = `
+                    <input type="text" class="message-input" value="${this.escapeHtml(message)}" placeholder="알림 메시지를 입력하세요..." maxlength="200">
+                    <button type="button" class="message-remove" onclick="this.parentElement.remove(); dashboard.updateMessageCount();">×</button>
+                `;
+                
+                container.appendChild(messageGroup);
+                
+                // 이벤트 리스너 추가
+                const input = messageGroup.querySelector('.message-input');
+                input.addEventListener('input', () => this.updateMessageCount());
+            });
+        }
+        
+        this.updateMessageCount();
+    }
+
+    getMessagesFromForm() {
+        const container = document.getElementById('messagesContainer');
+        const inputs = container.querySelectorAll('.message-input');
+        
+        return Array.from(inputs)
+            .map(input => input.value.trim())
+            .filter(msg => msg);
+    }
+
+    escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     showToast(message, type = 'success') {

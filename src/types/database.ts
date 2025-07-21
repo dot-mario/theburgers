@@ -4,6 +4,7 @@ export interface DetectionGroup {
   name: string;
   display_name: string;
   characters: string[];
+  alert_messages: string[];
   color: number;
   emoji: string;
   enabled: boolean;

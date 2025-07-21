@@ -15,6 +15,8 @@ export class CountManager implements CleanupableService {
   private alertCooldowns: Record<string, number> = {};
   private enabledGroups: string[] = [];
   private realtimeUpdateCallback?: () => void;
+  private configChangeCallback?: () => void;
+  private alertInProgress: Set<string> = new Set();
 
   constructor(
     private readonly countThreshold: number,
@@ -27,11 +29,8 @@ export class CountManager implements CleanupableService {
       this.resetAllCounts();
     }, COUNT_RESET_INTERVAL);
 
-    // 설정 변경 감지하여 그룹 카운트 재초기화
-    this.dynamicConstants.onConfigChange(() => {
-      console.log('Configuration changed, reinitializing group counts...');
-      this.initializeGroupCounts();
-    });
+    // 설정 변경 감지하여 그룹 카운트 재초기화 (중복 방지)
+    this.setupConfigChangeListener();
   }
 
   private async initializeGroupCounts(): Promise<void> {
@@ -105,10 +104,21 @@ export class CountManager implements CleanupableService {
 
   private async sendGroupAlert(group: string): Promise<void> {
     const now = Date.now();
+    
+    // 중복 알림 방지 - 이미 진행 중인 알림이 있다면 무시
+    if (this.alertInProgress.has(group)) {
+      console.log(`[Duplicate Prevention] ${group} alert already in progress, skipping.`);
+      return;
+    }
+    
+    // 쿨다운 체크
     if (this.alertCooldowns[group] > now) {
       console.log(`[Cooldown] ${group} alert is on cooldown.`);
       return;
     }
+
+    // 알림 진행 상태 설정
+    this.alertInProgress.add(group);
 
     try {
       const embed = await this.createGroupEmbed(group);
@@ -119,6 +129,9 @@ export class CountManager implements CleanupableService {
       console.log(`[Cooldown] ${group} alert cooldown started.`);
     } catch (error) {
       console.error(`Failed to send alert for ${group}:`, error);
+    } finally {
+      // 알림 진행 상태 해제
+      this.alertInProgress.delete(group);
     }
   }
 
@@ -183,6 +196,22 @@ export class CountManager implements CleanupableService {
     await this.initializeGroupCounts();
   }
 
+  // 설정 변경 리스너 설정 (중복 방지)
+  private setupConfigChangeListener(): void {
+    // 기존 콜백이 있다면 제거
+    if (this.configChangeCallback) {
+      this.dynamicConstants.offConfigChange(this.configChangeCallback);
+    }
+
+    // 새 콜백 등록
+    this.configChangeCallback = () => {
+      console.log('Configuration changed, reinitializing group counts...');
+      this.initializeGroupCounts();
+    };
+
+    this.dynamicConstants.onConfigChange(this.configChangeCallback);
+  }
+
   // 실시간 업데이트 콜백 설정
   public setRealtimeUpdateCallback(callback: () => void): void {
     this.realtimeUpdateCallback = callback;
@@ -190,5 +219,14 @@ export class CountManager implements CleanupableService {
 
   public cleanup(): void {
     this.intervalManager.clearAllIntervals();
+    
+    // 설정 변경 리스너 정리
+    if (this.configChangeCallback) {
+      this.dynamicConstants.offConfigChange(this.configChangeCallback);
+      this.configChangeCallback = undefined;
+    }
+    
+    // 진행 중인 알림 상태 정리
+    this.alertInProgress.clear();
   }
 }

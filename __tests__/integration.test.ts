@@ -56,8 +56,8 @@ describe('Integration Tests', () => {
       migrationService = new SupabaseMigrationService();
       
       // Mock migration methods
-      const mockCreateTables = jest.spyOn(migrationService, 'createTables').mockResolvedValue();
-      const mockMigrateData = jest.spyOn(migrationService, 'migrateExistingData').mockResolvedValue();
+      const mockCreateTables = jest.spyOn(migrationService, 'createTables').mockResolvedValue(undefined);
+      const mockMigrateData = jest.spyOn(migrationService, 'migrateExistingData').mockResolvedValue(undefined);
       const mockVerify = jest.spyOn(migrationService, 'verifyMigration').mockResolvedValue(true);
 
       await migrationService.createTables();
@@ -73,7 +73,7 @@ describe('Integration Tests', () => {
     it('should handle migration rollback', async () => {
       migrationService = new SupabaseMigrationService();
       
-      const mockRollback = jest.spyOn(migrationService, 'rollback').mockResolvedValue();
+      const mockRollback = jest.spyOn(migrationService, 'rollback').mockResolvedValue(undefined);
       
       await migrationService.rollback();
       
@@ -104,8 +104,8 @@ describe('Integration Tests', () => {
 
       // 3. Run migrations
       migrationService = new SupabaseMigrationService();
-      jest.spyOn(migrationService, 'createTables').mockResolvedValue();
-      jest.spyOn(migrationService, 'migrateExistingData').mockResolvedValue();
+      jest.spyOn(migrationService, 'createTables').mockResolvedValue(undefined);
+      jest.spyOn(migrationService, 'migrateExistingData').mockResolvedValue(undefined);
 
       // 4. Execute startup sequence
       await migrationService.createTables();

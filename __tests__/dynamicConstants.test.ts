@@ -15,6 +15,7 @@ describe('DynamicConstants', () => {
       name: 'burger',
       display_name: '버거',
       characters: ['젖', '버', '거'],
+      alert_messages: ['송재욱 버거 뿌린다 ㅋㅋ'],
       color: 0xd4b799,
       emoji: '🍔',
       enabled: true,
@@ -25,6 +26,7 @@ describe('DynamicConstants', () => {
       name: 'chicken',
       display_name: '치킨',
       characters: ['젖', '치', '킨'],
+      alert_messages: ['송재욱 치킨 뿌린다 ㅋㅋ'],
       color: 0xffa500,
       emoji: '🍗',
       enabled: true,
@@ -35,6 +37,7 @@ describe('DynamicConstants', () => {
       name: 'disabled',
       display_name: '비활성화',
       characters: ['비', '활', '성'],
+      alert_messages: ['비활성화 메시지'],
       color: 0x000000,
       emoji: '❌',
       enabled: false,
@@ -132,6 +135,7 @@ describe('DynamicConstants', () => {
           name: 'pizza',
           display_name: '피자',
           characters: ['젖', '피', '자'],
+          alert_messages: ['송재욱 피자 뿌린다 ㅋㅋ'],
           color: 0xff0000,
           emoji: '🍕',
           enabled: true,
@@ -221,11 +225,31 @@ describe('DynamicConstants', () => {
   });
 
   describe('onConfigChange', () => {
-    it('should register callback with config service', () => {
+    it('should register callback and prevent duplicates', () => {
       const callback = jest.fn();
+      
+      // 동일한 콜백을 여러 번 등록
+      dynamicConstants.onConfigChange(callback);
+      dynamicConstants.onConfigChange(callback);
       dynamicConstants.onConfigChange(callback);
 
-      expect(mockConfigService.onConfigChange).toHaveBeenCalledWith(callback);
+      // 설정 변경 이벤트가 등록되었는지 확인 (한 번만)
+      expect(mockConfigService.onConfigChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('should execute registered callbacks on config change', async () => {
+      const callback1 = jest.fn();
+      const callback2 = jest.fn();
+      
+      dynamicConstants.onConfigChange(callback1);
+      dynamicConstants.onConfigChange(callback2);
+
+      // 설정 변경 콜백 실행
+      const configChangeCallback = (mockConfigService.onConfigChange as jest.Mock).mock.calls[0][0];
+      configChangeCallback();
+
+      expect(callback1).toHaveBeenCalledTimes(1);
+      expect(callback2).toHaveBeenCalledTimes(1);
     });
   });
 

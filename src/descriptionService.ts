@@ -1,7 +1,7 @@
 // src/descriptionService.ts
-import { readFileSync, watchFile, unwatchFile } from 'fs';
 import { DescriptionData, CleanupableService } from './types';
 import { ArrayUtils } from './utils';
+import { SupabaseConfigurationService } from './config/SupabaseConfigurationService';
 
 const DEFAULT_DESCRIPTIONS: DescriptionData = {
   burger: ["송재욱 버거 뿌린다 ㅋㅋ"],
@@ -12,28 +12,40 @@ const DEFAULT_DESCRIPTIONS: DescriptionData = {
 
 export class DescriptionService implements CleanupableService {
   private descriptions: DescriptionData = DEFAULT_DESCRIPTIONS;
-  private filePath: string;
+  private configService: SupabaseConfigurationService;
+  private configChangeHandler = async () => {
+    console.log('Configuration changed, reloading alert messages...');
+    await this.loadDescriptions();
+  };
 
-  constructor(filePath: string = './descriptions.json') {
-    this.filePath = filePath;
-    this.loadDescriptions();
-    watchFile(this.filePath, this.handleFileChange.bind(this));
+  constructor(configService: SupabaseConfigurationService) {
+    this.configService = configService;
   }
 
-  private handleFileChange(): void {
-    console.log('descriptions.json change detected. Reloading...');
-    this.loadDescriptions();
+  async initialize(): Promise<void> {
+    await this.loadDescriptions();
+    this.configService.on('configChanged', this.configChangeHandler);
   }
 
-  private loadDescriptions(): void {
+  private async loadDescriptions(): Promise<void> {
     try {
-      const data = readFileSync(this.filePath, 'utf8');
-      this.descriptions = JSON.parse(data);
-      console.log('Descriptions loaded successfully.');
+      await this.loadFromSupabase();
+      console.log('Alert messages loaded from Supabase successfully.');
     } catch (error) {
-      console.error('Failed to load descriptions. Using default descriptions.', error);
+      console.error('Failed to load alert messages from Supabase. Using default descriptions.', error);
       this.descriptions = DEFAULT_DESCRIPTIONS;
     }
+  }
+
+  private async loadFromSupabase(): Promise<void> {
+    const groups = await this.configService.getDetectionGroups();
+    const descriptions: DescriptionData = { ...DEFAULT_DESCRIPTIONS };
+    
+    groups.forEach(group => {
+      descriptions[group.name] = group.alert_messages || [];
+    });
+    
+    this.descriptions = descriptions;
   }
 
   public getRandomDescription(group: keyof DescriptionData): string {
@@ -43,6 +55,6 @@ export class DescriptionService implements CleanupableService {
   }
 
   public cleanup(): void {
-    unwatchFile(this.filePath);
+    this.configService.off('configChanged', this.configChangeHandler);
   }
 }

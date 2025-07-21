@@ -134,6 +134,20 @@
                         <button type="button" id="addCharacterBtn" class="btn btn-secondary">+ 문자 추가</button>
                     </div>
                     <div class="form-group">
+                        <label>알림 메시지</label>
+                        <div class="messages-container" id="messagesContainer">
+                            <!-- 메시지 입력 필드들이 여기에 동적으로 추가됩니다 -->
+                        </div>
+                        <div class="message-actions">
+                            <button type="button" id="addMessageBtn" class="btn btn-secondary">+ 메시지 추가</button>
+                            <button type="button" id="testRandomMessageBtn" class="btn btn-outline">랜덤 테스트</button>
+                            <span class="message-count" id="messageCount">0개 메시지</span>
+                        </div>
+                        <div class="random-message-preview" id="randomMessagePreview">
+                            <!-- 랜덤 메시지 미리보기가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label class="checkbox-label">
                             <input type="checkbox" id="enabled" checked>
                             <span class="checkmark"></span>
