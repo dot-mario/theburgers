@@ -42,11 +42,7 @@ export class DescriptionService implements CleanupableService {
     const descriptions: DescriptionData = { ...DEFAULT_DESCRIPTIONS };
     
     groups.forEach(group => {
-      if (group.alert_messages) {
-        descriptions[group.name] = group.alert_messages;
-      } else {
-        descriptions[group.name] = [];
-      }
+      descriptions[group.name] = group.alert_messages || [];
     });
     
     this.descriptions = descriptions;

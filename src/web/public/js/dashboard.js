@@ -761,18 +761,27 @@ class ConfigurationDashboard {
         const container = document.getElementById('messagesContainer');
         const messageGroup = document.createElement('div');
         messageGroup.className = 'message-input-group';
-        
-        messageGroup.innerHTML = `
-            <input type="text" class="message-input" placeholder="알림 메시지를 입력하세요..." maxlength="200">
-            <button type="button" class="message-remove" onclick="this.parentElement.remove(); dashboard.updateMessageCount();">×</button>
-        `;
-        
-        container.appendChild(messageGroup);
-        
-        // 메시지 입력 필드에 이벤트 리스너 추가
-        const input = messageGroup.querySelector('.message-input');
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'message-input';
+        input.placeholder = '알림 메시지를 입력하세요...';
+        input.maxLength = 200;
         input.addEventListener('input', () => this.updateMessageCount());
-        
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'message-remove';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', () => {
+            messageGroup.remove();
+            this.updateMessageCount();
+        });
+
+        messageGroup.appendChild(input);
+        messageGroup.appendChild(removeBtn);
+        container.appendChild(messageGroup);
+
         this.updateMessageCount();
         input.focus();
     }
