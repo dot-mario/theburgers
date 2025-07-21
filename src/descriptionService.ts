@@ -13,6 +13,10 @@ const DEFAULT_DESCRIPTIONS: DescriptionData = {
 export class DescriptionService implements CleanupableService {
   private descriptions: DescriptionData = DEFAULT_DESCRIPTIONS;
   private configService: SupabaseConfigurationService;
+  private configChangeHandler = async () => {
+    console.log('Configuration changed, reloading alert messages...');
+    await this.loadDescriptions();
+  };
 
   constructor(configService: SupabaseConfigurationService) {
     this.configService = configService;
@@ -20,7 +24,7 @@ export class DescriptionService implements CleanupableService {
 
   async initialize(): Promise<void> {
     await this.loadDescriptions();
-    // TODO: Add a more robust realtime update mechanism
+    this.configService.on('configChanged', this.configChangeHandler);
   }
 
   private async loadDescriptions(): Promise<void> {
@@ -55,6 +59,6 @@ export class DescriptionService implements CleanupableService {
   }
 
   public cleanup(): void {
-    // No-op for now, as there are no persistent connections to clean up.
+    this.configService.off('configChanged', this.configChangeHandler);
   }
 }

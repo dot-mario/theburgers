@@ -25,6 +25,8 @@ describe('DescriptionService', () => {
   beforeEach(() => {
     mockConfigService = new SupabaseConfigurationService() as jest.Mocked<SupabaseConfigurationService>;
     mockConfigService.getDetectionGroups = jest.fn();
+    mockConfigService.on = jest.fn();
+    mockConfigService.off = jest.fn();
     service = new DescriptionService(mockConfigService);
   });
 
@@ -85,5 +87,49 @@ describe('DescriptionService', () => {
 
     const description = service.getRandomDescription('nonexistent' as any);
     expect(description).toBe("");
+  });
+
+  it('should reload descriptions when configuration changes', async () => {
+    // Initial setup
+    mockConfigService.getDetectionGroups.mockResolvedValue(mockGroups);
+    let configChangeHandler: () => Promise<void> = async () => {};
+    mockConfigService.on.mockImplementation((event: string | symbol, handler: (...args: any[]) => void) => {
+      if (event === 'configChanged') {
+        configChangeHandler = handler as () => Promise<void>;
+      }
+      return mockConfigService;
+    });
+
+    await service.initialize();
+
+    // First check
+    let burgerDescription = service.getRandomDescription('burger');
+    expect(['버거 설명1', '버거 설명2']).toContain(burgerDescription);
+    expect(mockConfigService.getDetectionGroups).toHaveBeenCalledTimes(1);
+
+    // Simulate configuration change
+    const updatedGroups: DetectionGroup[] = [
+      { ...mockGroups[0], alert_messages: ['새로운 버거 설명'] },
+      mockGroups[1]
+    ];
+    mockConfigService.getDetectionGroups.mockResolvedValue(updatedGroups);
+
+    // Trigger the event
+    await configChangeHandler();
+
+    // Second check
+    burgerDescription = service.getRandomDescription('burger');
+    expect(burgerDescription).toBe('새로운 버거 설명');
+    expect(mockConfigService.getDetectionGroups).toHaveBeenCalledTimes(2);
+  });
+
+  it('should remove event listener on cleanup', async () => {
+    mockConfigService.getDetectionGroups.mockResolvedValue(mockGroups);
+
+    await service.initialize();
+    service.cleanup();
+
+    expect(mockConfigService.on).toHaveBeenCalledWith('configChanged', expect.any(Function));
+    expect(mockConfigService.off).toHaveBeenCalledWith('configChanged', expect.any(Function));
   });
 });
