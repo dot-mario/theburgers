@@ -1,6 +1,6 @@
 {
   "name": "theburgers",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "CHZZK와 Discord 연동 봇 프로젝트",
   "main": "dist/index.js",
   "scripts": {
