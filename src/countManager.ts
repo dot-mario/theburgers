@@ -152,7 +152,7 @@ export class CountManager implements CleanupableService {
       
       return embed
         .setColor(color)
-        .setTitle(`${emoji} 젖${displayName} 알림 ${emoji}`)
+        .setTitle(`${emoji} ${displayName} 알림 ${emoji}`)
         .setDescription(description)
         .setURL(CONFIG.CHZZK_LIVE_URL);
     } catch (error) {

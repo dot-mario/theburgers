@@ -296,7 +296,7 @@ class ConfigurationDashboard {
         
         document.getElementById('previewEmoji').textContent = emoji;
         document.getElementById('previewEmoji2').textContent = emoji;
-        document.getElementById('previewText').textContent = `젖${displayName} 알림`;
+        document.getElementById('previewText').textContent = `${displayName} 알림`;
     }
 
     async saveGroup() {
@@ -754,7 +754,7 @@ class ConfigurationDashboard {
         const formData = this.getGroupFormData();
         const testText = formData.characters.join('');
         
-        this.showToast(`테스트 패턴: "${testText}" → ${formData.emoji} 젖${formData.display_name} 알림 ${formData.emoji}`, 'success');
+        this.showToast(`테스트 패턴: "${testText}" → ${formData.emoji} ${formData.display_name} 알림 ${formData.emoji}`, 'success');
     }
 
     addMessageInput() {
