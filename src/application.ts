@@ -55,9 +55,13 @@ export class Application {
       this.chzzkService = new ChzzkService(this.countManager, this.discordService, this.dynamicConstants);
       this.services.push(this.chzzkService);
 
-      // 설정 서비스도 정리 대상에 추가
+      // 설정 서비스들도 정리 대상에 추가
       this.services.push({
         cleanup: () => this.configurationService.cleanup()
+      });
+      
+      this.services.push({
+        cleanup: () => this.dynamicConstants.cleanup()
       });
 
       console.log('Application initialized successfully');

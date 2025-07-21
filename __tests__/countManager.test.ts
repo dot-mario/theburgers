@@ -28,6 +28,9 @@ describe('CountManager', () => {
   let fakeDynamicConstants: Partial<DynamicConstants>;
 
   beforeEach(async () => {
+    // Mock functions 리셋
+    jest.clearAllMocks();
+    
     fakeDescriptionService = {
       getRandomDescription: (group: string) => `${group} description`
     };
@@ -39,6 +42,7 @@ describe('CountManager', () => {
     fakeDynamicConstants = {
       getGroupCharacters: jest.fn().mockResolvedValue(GROUP_CHARACTERS),
       onConfigChange: jest.fn(),
+      offConfigChange: jest.fn(),
       getEnabledGroupNames: jest.fn().mockResolvedValue(['burger', 'chicken', 'pizza']),
       getGroupByName: jest.fn().mockImplementation((name: string) => Promise.resolve({
         id: name,
@@ -118,5 +122,67 @@ describe('CountManager', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
     // 3개 그룹 모두 알림이 발송되어야 함
     expect(fakeDiscordService.sendEmbed).toHaveBeenCalledTimes(3);
+  });
+
+  it('should prevent duplicate alerts for same group', async () => {
+    // Mock sendEmbed to simulate async delay
+    const sendEmbedMock = jest.fn().mockImplementation(() => 
+      new Promise(resolve => setTimeout(resolve, 50))
+    );
+    fakeDiscordService.sendEmbed = sendEmbedMock;
+
+    // burger 그룹 임계값 도달
+    const characters = GROUP_CHARACTERS.burger;
+    for (const char of characters) {
+      for (let i = 0; i < 2; i++) {
+        await countManager.updateGroupCount('burger', char);
+      }
+    }
+
+    // 동시에 여러 번 임계값 체크 (중복 상황 시뮬레이션)
+    const promises = [];
+    for (let i = 0; i < 5; i++) {
+      promises.push(countManager.updateGroupCount('burger', characters[0]));
+    }
+    
+    await Promise.all(promises);
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // 중복 방지로 인해 한 번만 호출되어야 함
+    expect(sendEmbedMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle config change listener properly without duplicates', async () => {
+    // 새로운 mock 객체 생성
+    const newOnConfigChangeMock = jest.fn();
+    const newOffConfigChangeMock = jest.fn();
+    
+    const newFakeDynamicConstants = {
+      getGroupCharacters: jest.fn().mockResolvedValue(GROUP_CHARACTERS),
+      onConfigChange: newOnConfigChangeMock,
+      offConfigChange: newOffConfigChangeMock,
+      getEnabledGroupNames: jest.fn().mockResolvedValue(['burger', 'chicken', 'pizza']),
+      getGroupByName: jest.fn().mockImplementation((name: string) => Promise.resolve({
+        id: name,
+        name: name,
+        threshold: 2,
+        enabled: true
+      }))
+    };
+
+    // 새로운 CountManager 인스턴스 생성하여 설정 변경 리스너 테스트
+    const newCountManager = new CountManager(
+      2,
+      fakeDescriptionService as DescriptionService,
+      fakeDiscordService as DiscordService,
+      newFakeDynamicConstants as unknown as DynamicConstants
+    );
+
+    // 설정 변경 리스너가 등록되었는지 확인
+    expect(newOnConfigChangeMock).toHaveBeenCalledTimes(1);
+
+    // cleanup 호출 시 리스너가 제거되는지 확인
+    newCountManager.cleanup();
+    expect(newOffConfigChangeMock).toHaveBeenCalledTimes(1);
   });
 });

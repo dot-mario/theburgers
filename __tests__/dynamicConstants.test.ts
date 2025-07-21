@@ -221,11 +221,31 @@ describe('DynamicConstants', () => {
   });
 
   describe('onConfigChange', () => {
-    it('should register callback with config service', () => {
+    it('should register callback and prevent duplicates', () => {
       const callback = jest.fn();
+      
+      // 동일한 콜백을 여러 번 등록
+      dynamicConstants.onConfigChange(callback);
+      dynamicConstants.onConfigChange(callback);
       dynamicConstants.onConfigChange(callback);
 
-      expect(mockConfigService.onConfigChange).toHaveBeenCalledWith(callback);
+      // 설정 변경 이벤트가 등록되었는지 확인 (한 번만)
+      expect(mockConfigService.onConfigChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('should execute registered callbacks on config change', async () => {
+      const callback1 = jest.fn();
+      const callback2 = jest.fn();
+      
+      dynamicConstants.onConfigChange(callback1);
+      dynamicConstants.onConfigChange(callback2);
+
+      // 설정 변경 콜백 실행
+      const configChangeCallback = (mockConfigService.onConfigChange as jest.Mock).mock.calls[0][0];
+      configChangeCallback();
+
+      expect(callback1).toHaveBeenCalledTimes(1);
+      expect(callback2).toHaveBeenCalledTimes(1);
     });
   });
 

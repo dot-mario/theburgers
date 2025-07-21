@@ -1,20 +1,21 @@
 // src/config/DynamicConstants.ts
 import { SupabaseConfigurationService } from './SupabaseConfigurationService';
 import { DetectionGroup } from '../types/database';
+import { CleanupableService } from '../types';
 
-export class DynamicConstants {
+export class DynamicConstants implements CleanupableService {
   private configService: SupabaseConfigurationService;
   private cachedGroups: Map<string, DetectionGroup> = new Map();
   private lastUpdate: number = 0;
   private readonly CACHE_TTL = 30000; // 30초
+  private onConfigChangeCallbacks: (() => void)[] = [];
+  private isConfigListenerSetup = false;
 
   constructor(configService: SupabaseConfigurationService) {
     this.configService = configService;
     
-    // 설정 변경 시 캐시 무효화
-    this.configService.onConfigChange(() => {
-      this.invalidateCache();
-    });
+    // 설정 변경 시 캐시 무효화 - 중복 등록 방지
+    this.setupConfigChangeListener();
   }
 
   async getGroupCharacters(): Promise<Record<string, string[]>> {
@@ -174,8 +175,49 @@ export class DynamicConstants {
     await this.getGroups();
   }
 
-  // 설정 변경 이벤트 리스너 등록
+  // 설정 변경 리스너 설정 (중복 방지)
+  private setupConfigChangeListener(): void {
+    // 이미 설정되어 있다면 중복 설정 방지
+    if (this.isConfigListenerSetup) {
+      return;
+    }
+
+    // 새 리스너 등록
+    this.configService.onConfigChange(() => {
+      this.invalidateCache();
+      // 등록된 모든 콜백 실행
+      this.onConfigChangeCallbacks.forEach(callback => {
+        try {
+          callback();
+        } catch (error) {
+          console.error('Error in config change callback:', error);
+        }
+      });
+    });
+
+    this.isConfigListenerSetup = true;
+  }
+
+  // 설정 변경 이벤트 리스너 등록 (중복 방지)
   onConfigChange(callback: () => void): void {
-    this.configService.onConfigChange(callback);
+    // 중복 등록 방지
+    if (!this.onConfigChangeCallbacks.includes(callback)) {
+      this.onConfigChangeCallbacks.push(callback);
+    }
+  }
+
+  // 설정 변경 이벤트 리스너 제거
+  offConfigChange(callback: () => void): void {
+    const index = this.onConfigChangeCallbacks.indexOf(callback);
+    if (index !== -1) {
+      this.onConfigChangeCallbacks.splice(index, 1);
+    }
+  }
+
+  // 리소스 정리
+  cleanup(): void {
+    this.onConfigChangeCallbacks = [];
+    this.isConfigListenerSetup = false;
+    this.invalidateCache();
   }
 }
