@@ -54,8 +54,7 @@ theburgers/
 │   └── CLAUDE.md              # AI 개발 가이드
 ├── config/               # ⚙️ 설정 파일들
 │   ├── jest.config.js    # Jest 테스트 설정
-│   ├── tsconfig.json     # TypeScript 설정
-│   └── descriptions.json # 동적 메시지 설정
+│   └── tsconfig.json     # TypeScript 설정
 ├── src/                  # 💻 소스 코드
 │   ├── web/              # 🌐 웹 인터페이스
 │   ├── config/           # ⚙️ 동적 설정 시스템

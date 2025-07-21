@@ -57,6 +57,7 @@ CREATE TABLE detection_groups (
   name TEXT NOT NULL UNIQUE,
   display_name TEXT NOT NULL,
   characters JSONB NOT NULL,
+  alert_messages JSONB NOT NULL DEFAULT '[]',
   color INTEGER NOT NULL,
   emoji TEXT NOT NULL,
   enabled BOOLEAN DEFAULT true,
@@ -129,10 +130,10 @@ CREATE POLICY "Enable all operations for service role" ON configuration_history
 
 ```sql
 -- 기본 감지 그룹 생성
-INSERT INTO detection_groups (name, display_name, characters, color, emoji, enabled, threshold) VALUES
-('burger', '버거', '["젖", "버", "거"]', 13874041, '🍔', true, 5),
-('chicken', '치킨', '["젖", "치", "킨"]', 16761856, '🍗', true, 5),
-('pizza', '피자', '["젖", "피", "자"]', 16711680, '🍕', true, 5);
+INSERT INTO detection_groups (name, display_name, characters, alert_messages, color, emoji, enabled, threshold) VALUES
+('burger', '버거', '["젖", "버", "거"]', '[]', 13874041, '🍔', true, 5),
+('chicken', '치킨', '["젖", "치", "킨"]', '[]', 16761856, '🍗', true, 5),
+('pizza', '피자', '["젖", "피", "자"]', '[]', 16711680, '🍕', true, 5);
 
 -- 기본 시스템 설정
 INSERT INTO system_settings (key_name, value_data) VALUES
@@ -299,7 +300,6 @@ mkdir backup_$(date +%Y%m%d_%H%M%S)
 
 # 중요 파일 백업
 cp .env backup_*/
-cp config/descriptions.json backup_*/
 cp src/constants.ts backup_*/
 
 echo "✅ 백업 완료!"

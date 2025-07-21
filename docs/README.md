@@ -69,7 +69,6 @@
 theburgers/
 ├── .env                       # 환경변수 파일 (Supabase 설정 포함)
 ├── .env.example               # 🆕 환경변수 예시 파일
-├── config/descriptions.json   # 동적 설명 문구 파일
 ├── Dockerfile                 # Docker 멀티 스테이지 빌드 파일
 ├── docker-compose.yml         # Docker Compose 설정 파일
 ├── package.json               # 의존성 및 스크립트 관리 파일
@@ -79,7 +78,7 @@ theburgers/
 │   ├── constants.ts           # 확장된 상수 관리 (폴백용)
 │   ├── types.ts               # 중앙집중식 타입 정의 및 인터페이스
 │   ├── utils.ts               # 공통 유틸리티 클래스
-│   ├── descriptionService.ts  # 동적 문구 로딩 및 파일 감시 서비스
+│   ├── descriptionService.ts  # 동적 문구 로딩 서비스
 │   ├── discordService.ts      # Discord 클라이언트 및 메시지 전송 모듈
 │   ├── countManager.ts        # 🔄 동적 패턴 감지, 임계값 알림, 쿨다운 관리
 │   ├── chzzkService.ts        # 🔄 CHZZK 채팅 연동 및 동적 패턴 처리
@@ -92,24 +91,22 @@ theburgers/
 │   ├── config/                # 🆕 동적 설정 시스템
 │   │   ├── SupabaseConfigurationService.ts  # 🆕 설정 서비스
 │   │   └── DynamicConstants.ts              # 🆕 동적 상수 관리
-│   ├── web/                   # 🆕 웹 인터페이스
-│   │   ├── configApi.ts       # 🆕 REST API 엔드포인트
-│   │   └── public/            # 🆕 웹 대시보드
-│   │       ├── dashboard.html # 🆕 메인 대시보드 UI
-│   │       ├── css/dashboard.css  # 🆕 반응형 스타일
-│   │       └── js/dashboard.js    # 🆕 프론트엔드 로직
-│   └── migration/             # 🆕 데이터 마이그레이션
-│       └── supabaseMigration.ts   # 🆕 기존 데이터 마이그레이션 스크립트
+│   └── web/                   # 🆕 웹 인터페이스
+│       ├── configApi.ts       # 🆕 REST API 엔드포인트
+│       └── public/            # 🆕 웹 대시보드
+│           ├── dashboard.html # 🆕 메인 대시보드 UI
+│           ├── css/dashboard.css  # 🆕 반응형 스타일
+│           └── js/dashboard.js    # 🆕 프론트엔드 로직
 ├── docs/                      # 📚 문서 디렉터리
 │   ├── README.md              # 한국어 문서 (현재 파일)
 │   ├── README.en.md           # 영어 문서
 │   ├── CLAUDE.md              # Claude Code 개발 가이드
-│   └── DYNAMIC_CONFIG_SETUP.md  # 설정 시스템 가이드 (신규 설치 + 마이그레이션)
+│   └── DYNAMIC_CONFIG_SETUP.md  # 설정 시스템 가이드
 └── __tests__/                 # 포괄적인 테스트 파일 디렉터리
     ├── application.test.ts         # Application 클래스 테스트
     ├── utils.test.ts               # 유틸리티 클래스들 테스트
     ├── config.test.ts              # config 모듈 테스트
-    ├── descriptionService.test.ts  # 파일 감시, 랜덤 선택, 에러 처리 테스트
+    ├── descriptionService.test.ts  # 동적 설명 로딩 테스트
     ├── discordService.test.ts      # Discord 클라이언트 생명주기 및 에러 처리 테스트
     ├── countManager.test.ts        # 동적 패턴 기반 테스트, 임계값 검증
     └── chzzkService.test.ts        # 메시지 처리, 밴 시스템, 이벤트 핸들링 테스트
@@ -232,10 +229,9 @@ docker-compose up -d
 - `GET /api/config/status` - 시스템 상태 및 통계
 - `GET /api/config/validation` - 설정 유효성 검증
 
-## 설정 및 마이그레이션 🔧
+## 설정 🔧
 
 - **신규 설치**: [동적 설정 시스템 설정 가이드](./DYNAMIC_CONFIG_SETUP.md) 참조
-- **기존 시스템 업그레이드**: 동일 가이드의 [기존 시스템 마이그레이션](./DYNAMIC_CONFIG_SETUP.md#기존-시스템-마이그레이션) 섹션 참조
 
 ## CI/CD & GitHub Actions
 

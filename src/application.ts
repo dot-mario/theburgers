@@ -41,7 +41,8 @@ export class Application {
       await this.discordService.login();
       this.services.push(this.discordService);
 
-      this.descriptionService = new DescriptionService('./config/descriptions.json');
+      this.descriptionService = new DescriptionService(this.configurationService);
+      await this.descriptionService.initialize();
       this.services.push(this.descriptionService);
 
       this.countManager = new CountManager(

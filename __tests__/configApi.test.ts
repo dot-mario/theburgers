@@ -20,6 +20,7 @@ describe('ConfigurationAPI', () => {
     name: 'test-group',
     display_name: '테스트 그룹',
     characters: ['테', '스', '트'],
+    alert_messages: [],
     color: 0xff0000,
     emoji: '🧪',
     enabled: true,
@@ -82,6 +83,7 @@ describe('ConfigurationAPI', () => {
       name: 'new-group',
       display_name: '새 그룹',
       characters: ['새', '그', '룹'],
+      alert_messages: [],
       color: 0x00ff00,
       emoji: '🆕',
       enabled: true,
@@ -91,6 +93,7 @@ describe('ConfigurationAPI', () => {
     it('should create group successfully', async () => {
       mockConfigService.createDetectionGroup.mockResolvedValue({
         ...newGroupData,
+        alert_messages: [],
         id: 'new-id'
       });
 

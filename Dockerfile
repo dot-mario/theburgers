@@ -13,7 +13,7 @@ RUN apk add --no-cache tzdata && \
 COPY package*.json ./
 RUN npm install
 
-# 전체 소스 복사 (src/ 폴더, .env, descriptions.json 등)
+# 전체 소스 복사 (src/ 폴더, .env 등)
 COPY . ./
 
 # TypeScript 컴파일 (결과물은 dist/ 폴더에 생성)

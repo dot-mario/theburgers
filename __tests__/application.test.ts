@@ -38,6 +38,7 @@ describe('Application', () => {
     } as any;
 
     mockDescriptionService = {
+      initialize: jest.fn().mockResolvedValue(undefined),
       cleanup: jest.fn()
     } as any;
 
@@ -81,7 +82,7 @@ describe('Application', () => {
       expect(DiscordService).toHaveBeenCalledTimes(1);
       expect(mockDiscordService.login).toHaveBeenCalledTimes(1);
       
-      expect(DescriptionService).toHaveBeenCalledWith('./config/descriptions.json');
+      expect(DescriptionService).toHaveBeenCalledWith(mockConfigService);
       expect(CountManager).toHaveBeenCalledTimes(1);
       expect(ChzzkService).toHaveBeenCalledTimes(1);
     });

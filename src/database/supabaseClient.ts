@@ -23,7 +23,7 @@ export async function testSupabaseConnection(): Promise<boolean> {
   try {
     const { data, error } = await supabaseAdmin
       .from('detection_groups')
-      .select('count()')
+      .select('id', { count: 'exact', head: true })
       .limit(1);
     
     if (error) {

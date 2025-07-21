@@ -69,7 +69,6 @@ We've completely transformed the hardcoded detection patterns into a **fully dyn
 theburgers/
 ├── .env                       # Environment variables file (including Supabase settings)
 ├── .env.example               # 🆕 Environment variables example file
-├── config/descriptions.json   # Dynamic description phrases file
 ├── Dockerfile                 # Docker multi-stage build file
 ├── docker-compose.yml         # Docker Compose configuration file
 ├── package.json               # Dependency and script management file
@@ -79,7 +78,7 @@ theburgers/
 │   ├── constants.ts           # Extended constants management (for fallback)
 │   ├── types.ts               # Centralized type definitions and interfaces
 │   ├── utils.ts               # Common utility classes
-│   ├── descriptionService.ts  # Dynamic phrase loading and file watching service
+│   ├── descriptionService.ts  # Dynamic phrase loading service
 │   ├── discordService.ts      # Discord client and message sending module
 │   ├── countManager.ts        # 🔄 Dynamic pattern detection, threshold notifications, cooldown management
 │   ├── chzzkService.ts        # 🔄 CHZZK chat integration and dynamic pattern processing
@@ -92,24 +91,22 @@ theburgers/
 │   ├── config/                # 🆕 Dynamic configuration system
 │   │   ├── SupabaseConfigurationService.ts  # 🆕 Configuration service
 │   │   └── DynamicConstants.ts              # 🆕 Dynamic constants management
-│   ├── web/                   # 🆕 Web interface
-│   │   ├── configApi.ts       # 🆕 REST API endpoints
-│   │   └── public/            # 🆕 Web dashboard
-│   │       ├── dashboard.html # 🆕 Main dashboard UI
-│   │       ├── css/dashboard.css  # 🆕 Responsive styling
-│   │       └── js/dashboard.js    # 🆕 Frontend logic
-│   └── migration/             # 🆕 Data migration
-│       └── supabaseMigration.ts   # 🆕 Existing data migration script
+│   └── web/                   # 🆕 Web interface
+│       ├── configApi.ts       # 🆕 REST API endpoints
+│       └── public/            # 🆕 Web dashboard
+│           ├── dashboard.html # 🆕 Main dashboard UI
+│           ├── css/dashboard.css  # 🆕 Responsive styling
+│           └── js/dashboard.js    # 🆕 Frontend logic
 ├── docs/                      # 📚 Documentation directory
 │   ├── README.md              # Korean documentation
 │   ├── README.en.md           # English documentation (current file)
 │   ├── CLAUDE.md              # Claude Code development guide
-│   └── DYNAMIC_CONFIG_SETUP.md  # Setup guide (new installation + migration)
+│   └── DYNAMIC_CONFIG_SETUP.md  # Setup guide (new installation)
 └── __tests__/                 # Comprehensive test files directory
     ├── application.test.ts         # Application class tests
     ├── utils.test.ts               # Utility classes tests
     ├── config.test.ts              # config module tests
-    ├── descriptionService.test.ts  # File watching, random selection, error handling tests
+    ├── descriptionService.test.ts  # Dynamic description loading tests
     ├── discordService.test.ts      # Discord client lifecycle and error handling tests
     ├── countManager.test.ts        # Dynamic pattern-based tests, threshold validation
     └── chzzkService.test.ts        # Message processing, ban system, event handling tests
@@ -232,10 +229,9 @@ RESTful API for programmatic configuration management:
 - `GET /api/config/status` - System status and statistics
 - `GET /api/config/validation` - Configuration validation
 
-## Setup and Migration 🔧
+## Setup 🔧
 
 - **New Installation**: See [Dynamic Configuration System Setup Guide](./DYNAMIC_CONFIG_SETUP.md)
-- **Existing System Upgrade**: See [Migration section](./DYNAMIC_CONFIG_SETUP.md#기존-시스템-마이그레이션) in the same guide
 
 ## CI/CD & GitHub Actions
 
