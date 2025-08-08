@@ -1,33 +1,92 @@
 # Codecov configuration
 # https://docs.codecov.io/docs/codecov-yaml
+# Validate with: curl --data-binary @codecov.yml https://codecov.io/validate
+
+# General Settings
+codecov:
+  # Repository settings
+  branch: main  # Default branch
+  
+  # Report settings
+  max_report_age: "24h"  # Reports expire after 24 hours
+  require_ci_to_pass: true  # CI must pass for coverage to be processed
+  notify:
+    after_n_builds: 2  # Wait for 2 builds before notifying
 
 # Coverage configuration
 coverage:
-  precision: 2
-  round: down
-  range: "70...100"
+  precision: 2  # Decimal precision for coverage percentages
+  round: down  # Rounding method (down, up, nearest)
+  range: "75...95"  # Color range for coverage visualization
   
   status:
+    # Overall project coverage
     project:
       default:
-        target: 80%  # 전체 프로젝트 커버리지 목표
+        target: 85%  # 전체 프로젝트 커버리지 목표 (80% → 85%)
         threshold: 1%  # 허용 가능한 커버리지 감소율
         base: auto
-        if_ci_failed: error
+        if_ci_failed: error  # Fail if CI fails
+        if_not_found: success  # Pass if no base report found
+        informational: false  # Make check required
+      
+      # Specific checks for different areas
+      web:
+        target: 80%
+        paths:
+          - "src/web/**"
+      core:
+        target: 90%
+        paths:
+          - "src/config/**"
+          - "src/database/**"
+          - "src/services/**"
+    
+    # Coverage for new/modified code
     patch:
       default:
-        target: 80%  # 새로운 코드의 커버리지 목표
+        target: 85%  # 새로운 코드의 커버리지 목표 (80% → 85%)
         threshold: 1%
         base: auto
+        if_no_uploads: error
+        if_not_found: success
+        if_ci_failed: error
 
 # PR 댓글 설정
 comment:
-  layout: "reach,diff,flags,tree,betaprofiling"
-  behavior: default
-  require_changes: false
-  require_base: false
-  require_head: true
-  show_carryforward_flags: true
+  layout: "header,reach,diff,flags,components,tree,footer"  # Enhanced layout
+  behavior: default  # Comment on PRs
+  require_changes: false  # Comment even if no changes
+  require_base: false  # Comment even without base report
+  require_head: true  # Require head report
+  show_carryforward_flags: true  # Show carryforward flag info
+  show_critical_paths: true  # Show critical file paths
+  after_n_builds: 2  # Wait for all builds before commenting
+
+# Component-based coverage tracking
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        threshold: 1%
+  individual_components:
+    - component_id: web-interface
+      name: Web Interface
+      paths:
+        - src/web/**
+    - component_id: core-services
+      name: Core Services
+      paths:
+        - src/services/**
+    - component_id: database
+      name: Database Layer
+      paths:
+        - src/database/**
+    - component_id: config
+      name: Configuration
+      paths:
+        - src/config/**
 
 # 무시할 파일/폴더 패턴
 ignore:
@@ -36,18 +95,54 @@ ignore:
   - "config/**/*"
   - "**/*.test.ts"
   - "**/*.spec.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.tsx"
   - "**/tests/**/*"
   - "**/node_modules/**/*"
   - "**/*.config.js"
   - "**/*.config.ts"
+  - "**/mocks/**/*"
+  - "**/__mocks__/**/*"
+  - "docs/**/*"
+  - "scripts/**/*"
 
-# 플래그 설정 (선택사항 - 여러 테스트 스위트가 있을 경우)
+# 플래그 설정 - 여러 테스트 스위트 구분
 flags:
   unit:
     paths:
-      - src/
+      - src/**/*.ts
+      - "!src/**/*.test.ts"
+      - "!src/**/*.spec.ts"
+    carryforward: true
+    carryforward_mode: "labels"
+  
+  integration:
+    paths:
+      - src/**/*.ts
+      - "!src/**/*.test.ts"
+      - "!src/**/*.spec.ts"
+    carryforward: true
+    carryforward_mode: "labels"
+  
+  web:
+    paths:
+      - src/web/**
     carryforward: true
 
 # GitHub Checks 설정
 github_checks:
-  annotations: true
+  annotations: true  # Add annotations to PR files
+
+# Parsers configuration for better coverage accuracy
+parsers:
+  javascript:
+    enable_partials: true  # Better support for partial line coverage
+  typescript:
+    enable_partials: true
+
+# Profiling for performance insights
+profiling:
+  critical_files_paths:
+    - src/services/discord/**
+    - src/config/**
+    - src/database/**
