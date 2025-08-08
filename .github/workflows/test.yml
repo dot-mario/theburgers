@@ -37,6 +37,16 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      # Validate codecov.yml configuration
+      - name: Validate Codecov Configuration
+        run: |
+          if [ -f codecov.yml ]; then
+            echo "📋 Validating codecov.yml configuration..."
+            curl --data-binary @codecov.yml https://codecov.io/validate
+          else
+            echo "⚠️ No codecov.yml found, using default settings"
+          fi
+
       # Quality checks BEFORE build (fail fast)
       - name: Check TypeScript
         run: npx tsc --noEmit -p config/tsconfig.json
@@ -51,15 +61,32 @@ jobs:
 
       - name: Generate Test Coverage
         id: coverage
-        run: npm run test:coverage
+        run: |
+          npm run test:coverage
+          echo "## 📊 Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          npx jest --coverage --coverageReporters="text-summary" --no-coverage-colors 2>/dev/null | tail -n 10 >> $GITHUB_STEP_SUMMARY || echo "Coverage summary not available" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         continue-on-error: true
 
       # Upload coverage reports to Codecov
-      - name: Upload coverage reports to Codecov
+      - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: dot-mario/theburgers
+          files: ./coverage/lcov.info
+          flags: unit,integration
+          name: codecov-umbrella
+          fail_ci_if_error: true
+          verbose: true
+          # Better PR comments
+          override_branch: ${{ github.head_ref || github.ref_name }}
+          override_commit: ${{ github.event.pull_request.head.sha || github.sha }}
+          override_pr: ${{ github.event.pull_request.number }}
+          override_build: ${{ github.run_id }}
+          # Component-specific uploads
+          functionalities: fix
 
       # Upload coverage artifacts (only for PRs and main branch)
       - name: Upload Coverage Reports
@@ -81,28 +108,49 @@ jobs:
           echo "## 🚀 CI/CD Pipeline Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          echo "### Build & Quality Checks" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Dependencies installed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ TypeScript compilation passed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Project built successfully" >> $GITHUB_STEP_SUMMARY
+          # Build Status Table
+          echo "### 📋 Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependencies | ✅ | npm ci completed |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript | ✅ | Type checking passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ✅ | Project built successfully |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          # Test Results
+          echo "### 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.test.outcome }}" == "success" ]; then
-            echo "- ✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **All tests passed successfully**" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- ⚠️ Some tests failed - check logs" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Some tests failed** - [View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           fi
+          echo "" >> $GITHUB_STEP_SUMMARY
           
+          # Coverage Status
+          echo "### 📊 Coverage Status" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.coverage.outcome }}" == "success" ]; then
-            echo "- 📊 Coverage report generated" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Coverage report generated and uploaded to Codecov" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📈 [View detailed coverage report on Codecov](https://codecov.io/github/dot-mario/theburgers)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- ⚠️ Coverage generation had issues" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ Coverage generation encountered issues" >> $GITHUB_STEP_SUMMARY
           fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Links and Resources
+          echo "### 🔗 Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 [Codecov Dashboard](https://codecov.io/github/dot-mario/theburgers)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 [PR Coverage Diff](https://codecov.io/github/dot-mario/theburgers/pull/${{ github.event.pull_request.number }})" >> $GITHUB_STEP_SUMMARY
           
           # Only show artifacts link when coverage was uploaded
           if [[ "${{ github.event_name }}" == "pull_request" || ("${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main") ]]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
-            echo "- [Coverage Reports](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+            echo "- 📦 [Download Coverage Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)" >> $GITHUB_STEP_SUMMARY
           fi
+          
+          # Build Information
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ℹ️ Build Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: #${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
