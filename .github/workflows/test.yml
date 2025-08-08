@@ -9,10 +9,11 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  checks: write
 
 jobs:
-  build:
-    name: Build & Test
+  build-test:
+    name: Build & Test & Quality
     runs-on: ubuntu-22.04
     env:
       DISCORD_TOKEN: dummy_token
@@ -20,7 +21,6 @@ jobs:
       DISCORD_BAN_CHANNEL_ID: dummy_ban_channel
       NID_AUTH: dummy_auth
       NID_SESSION: dummy_session
-      # Add missing environment variables for testing
       SUPABASE_URL: dummy_url
       SUPABASE_ANON_KEY: dummy_key
       SUPABASE_SERVICE_ROLE_KEY: dummy_service_key
@@ -37,49 +37,128 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      # Quality checks BEFORE build (fail fast)
+      - name: Check TypeScript
+        run: npx tsc --noEmit -p config/tsconfig.json
+
       - name: Build Project
         run: npm run build
 
       - name: Run Tests
+        id: test
         run: npm run test
         continue-on-error: true
 
       - name: Generate Test Coverage
+        id: coverage
         run: npm run test:coverage
         continue-on-error: true
 
+      # Upload coverage artifacts (only for PRs and main branch)
       - name: Upload Coverage Reports
         uses: actions/upload-artifact@v4
-        if: always()
+        if: |
+          always() && (
+            github.event_name == 'pull_request' || 
+            (github.event_name == 'push' && github.ref == 'refs/heads/main')
+          )
         with:
           name: coverage-reports
           path: coverage/
+          retention-days: 7
 
-  quality:
-    name: Code Quality
-    runs-on: ubuntu-22.04
-    needs: build
-    if: always()
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # Coverage comment on PR
+      - name: Coverage Report Comment
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
         with:
-          node-version: 20
-          cache: 'npm'
+          script: |
+            const fs = require('fs');
+            let coverageReport = '## 📊 Test Coverage Report\n\n';
+            
+            try {
+              // coverage-summary.json이 있다면 읽어서 포맷팅
+              if (fs.existsSync('coverage/coverage-summary.json')) {
+                const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+                const total = coverage.total;
+                
+                coverageReport += '| Metric | Coverage | Details |\n';
+                coverageReport += '|--------|----------|----------|\n';
+                coverageReport += `| Lines | ${total.lines.pct}% | ${total.lines.covered}/${total.lines.total} |\n`;
+                coverageReport += `| Statements | ${total.statements.pct}% | ${total.statements.covered}/${total.statements.total} |\n`;
+                coverageReport += `| Functions | ${total.functions.pct}% | ${total.functions.covered}/${total.functions.total} |\n`;
+                coverageReport += `| Branches | ${total.branches.pct}% | ${total.branches.covered}/${total.branches.total} |\n`;
+                
+                // Coverage threshold check
+                const minCoverage = 80;
+                if (total.lines.pct < minCoverage) {
+                  coverageReport += `\n⚠️ **Warning**: Line coverage (${total.lines.pct}%) is below threshold (${minCoverage}%)\n`;
+                } else {
+                  coverageReport += `\n✅ Coverage meets threshold (${minCoverage}%)\n`;
+                }
+              } else {
+                coverageReport += '⚠️ Coverage report not found\n';
+              }
+            } catch (error) {
+              coverageReport += '❌ Error reading coverage report\n';
+            }
+            
+            // Find and update existing comment or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('Test Coverage Report')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: coverageReport
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: coverageReport
+              });
+            }
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Check TypeScript
-        run: npx tsc --noEmit -p config/tsconfig.json
-
-      - name: Summary
+      # Summary
+      - name: Pipeline Summary
+        if: always()
         run: |
-          echo "## Build & Test Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 CI/CD Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Build & Quality Checks" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Dependencies installed" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ TypeScript compilation passed" >> $GITHUB_STEP_SUMMARY
-          echo "- ⚠️  Some tests may be failing - check individual job results" >> $GITHUB_STEP_SUMMARY
-          echo "- 📊 Test coverage reports available in artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Project built successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.test.outcome }}" == "success" ]; then
+            echo "- ✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⚠️ Some tests failed - check logs" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.coverage.outcome }}" == "success" ]; then
+            echo "- 📊 Coverage report generated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⚠️ Coverage generation had issues" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Only show artifacts link when coverage was uploaded
+          if [[ "${{ github.event_name }}" == "pull_request" || ("${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main") ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "- [Coverage Reports](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          fi
