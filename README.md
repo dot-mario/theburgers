@@ -1,5 +1,7 @@
 # The Burgers
 
+[![codecov](https://codecov.io/github/dot-mario/theburgers/graph/badge.svg?token=FX2D970WPE)](https://codecov.io/github/dot-mario/theburgers)
+
 **한국어** · [English](./docs/README.en.md)
 
 이 프로젝트의 전체 코드의 약 99%는 ChatGPT o3 mini를 통해 자동 생성되었으며, 이후 Claude 3.5 Sonnet을 통해 전면적인 리팩토링과 **웹 인터페이스 추가**를 거쳐 코드 품질과 유지보수성을 크게 향상시켰습니다.
